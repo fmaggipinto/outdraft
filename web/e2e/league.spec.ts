@@ -269,3 +269,12 @@ test("team sheet shows form, last 6 scores, next Fixtures with difficulty and th
   await expect(chips.first()).toHaveAttribute("aria-label", /^GW10 (home|away) v [A-Z]{3}, difficulty [1-5] of 5$/);
   await expect(chips.first()).toHaveText(/^[A-Za-z]{3} [1-5]$/);
 });
+
+test("shows points left on the bench, worked out from lineups", async ({ page }) => {
+  await page.goto("/league/5000/squad");
+  const section = page.getByRole("region", { name: "Points left on the bench" });
+  await expect(section).toContainText(/\d+ pts in 8 gameweeks/);
+  const total = Number((await section.locator(".note").textContent())!.match(/(\d+) pts/)![1]);
+  expect(total).toBeGreaterThan(0);   // the Draft API's own figure is always 0
+  await expect(section.getByRole("img")).toHaveAttribute("aria-label", /points left on the bench: GW1 \d+, .+GW8 \d+$/);
+});

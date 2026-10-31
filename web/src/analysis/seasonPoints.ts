@@ -102,3 +102,20 @@ export function currentSquadPoints(managers: ManagerAnalysis[], players: Project
     return { manager, byPosition, total: POSITIONS.reduce((s, pos) => s + byPosition[pos], 0), top, gameweeks: 0 };
   });
 }
+
+/**
+ * Points left on the bench in each finished gameweek: the points of the
+ * Players who didn't start after auto-subs. Worked out from lineups because
+ * the Draft API's own points_on_bench is always 0.
+ */
+export function benchPoints(picks: Map<number, Picks>, results: Results) {
+  const pointsIn = (id: number, i: number) => results.players[String(id)]?.[i] ?? 0;
+  const rows = results.gameweeks.flatMap((gameweek, i) => {
+    const p = picks.get(gameweek);
+    if (!p) return [];
+    const starters = new Set(startingXI(p));
+    const bench = p.picks.map((x) => x.element).filter((id) => !starters.has(id));
+    return [{ gameweek, points: bench.reduce((s, id) => s + pointsIn(id, i), 0) }];
+  });
+  return { rows, total: rows.reduce((s, r) => s + r.points, 0) };
+}

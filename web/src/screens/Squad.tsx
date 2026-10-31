@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { navigate } from "../App";
 import { squadBreakdown, type SquadCell, type SquadRow } from "../analysis/squad";
 import { useClaim } from "../claim";
+import { BenchPoints } from "../components/BenchPoints";
 import { StatusTag } from "../components/FreeAgentBrowser";
 import { Screen } from "../components/Screen";
 import { ordinal, pts } from "../format";
@@ -75,6 +76,8 @@ export function Squad({ leagueId, entryId }: { leagueId: number; entryId: number
           <TeamSheet rows={b.rows} projections={projections} />
         </div>
       </section>
+
+      <BenchPoints entryId={manager.entryId} teamName={manager.teamName} />
 
       <section aria-labelledby="split-h">
         <div className="section-head">

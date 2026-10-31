@@ -385,3 +385,10 @@ section[aria-labelledby="table-h"] td.left { white-space: normal; overflow-wrap:
 .chips { display: inline-flex; gap: 3px; flex-wrap: wrap; }
 .chip { font-family: "Barlow Condensed", sans-serif; font-weight: 700; font-size: 12px; padding: 1px 5px; color: #16181D; border: 1px solid var(--rule); }
 .chip.blank { background: var(--rule); color: var(--muted); }
+
+/* Points left on the bench */
+.bench-chart { width: 100%; max-width: 560px; height: auto; display: block; margin: 0 auto; }
+.bench-chart rect { fill: var(--ink); }
+.bench-chart .base { stroke: var(--ink); stroke-width: 1.5; }
+.bench-chart .value { fill: var(--ink); font-family: "Anton", Impact, sans-serif; font-size: 13px; }
+.bench-chart .axis { fill: var(--muted); font-family: "Barlow Condensed", sans-serif; font-weight: 700; font-size: 12px; }
