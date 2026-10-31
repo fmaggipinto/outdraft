@@ -20,3 +20,9 @@ export function when(iso: string): string {
 }
 
 export const pts = (x: number) => x.toFixed(1);
+
+/** 1st, 2nd, 3rd, 11th… */
+export function ordinal(n: number) {
+  const s = n % 100 >= 11 && n % 100 <= 13 ? "th" : ({ 1: "st", 2: "nd", 3: "rd" } as Record<number, string>)[n % 10] ?? "th";
+  return `${n}${s}`;
+}

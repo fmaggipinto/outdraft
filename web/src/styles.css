@@ -9,6 +9,13 @@
   --acc-soft: #dcefe4;
   --bar: #9fd1b5;
   --err: #b42318;
+  --warn: #9a5b00;
+  --warn-soft: #fbedd5;
+  --bad-soft: #fbe3e1;
+  --gkp: #d4a017;
+  --def: #2f8f5b;
+  --mid: #3b6fd8;
+  --fwd: #d24b3e;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
@@ -23,6 +30,13 @@
     --acc-soft: #1f3a2c;
     --bar: #2f6b4b;
     --err: #ff8a80;
+    --warn: #ffc266;
+    --warn-soft: #3a2c12;
+    --bad-soft: #3d1d1b;
+    --gkp: #e0b43a;
+    --def: #4fbf86;
+    --mid: #6f97f0;
+    --fwd: #f07a6e;
     color-scheme: dark;
   }
 }
@@ -106,6 +120,42 @@ th { color: var(--mute); font-weight: 600; font-size: 12.5px; }
 .left { text-align: left; }
 td .team { font-weight: 600; }
 tbody tr:last-child td { border-bottom: 0; }
+
+/* Links into Squads */
+a { color: var(--acc); }
+.strength-row { display: contents; color: inherit; text-decoration: none; }
+.strength li { cursor: pointer; }
+.strength li:hover .team, td a.team:hover { text-decoration: underline; }
+td a.team { color: inherit; text-decoration: none; }
+.back { display: inline-block; margin: 4px 0 2px; font-size: 14px; text-decoration: none; font-weight: 600; }
+
+/* Squad screen */
+.value-inline { font-variant-numeric: tabular-nums; margin-left: 6px; }
+.split { display: flex; height: 14px; border-radius: 7px; overflow: hidden; margin: 10px 0 8px; background: var(--line); }
+.split .seg { display: block; height: 100%; }
+.p1 { background: var(--gkp); } .p2 { background: var(--def); } .p3 { background: var(--mid); } .p4 { background: var(--fwd); }
+.split-legend { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13.5px; }
+.split-legend .dot { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.split-legend b { font-variant-numeric: tabular-nums; }
+
+.key { display: inline-block; width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--line); vertical-align: -2px; }
+.key.starter { background: var(--acc-soft); border-color: var(--acc); }
+table.squad .pos-row th { font-size: 12px; color: var(--mute); text-transform: uppercase; letter-spacing: 0.04em; padding: 14px 0 4px; position: sticky; left: 0; background: var(--card); }
+table.squad tbody tr:last-child td, table.squad tbody tr:last-child th { border-bottom: 1px solid var(--line); }
+table.squad tbody:last-child tr:last-child td, table.squad tbody:last-child tr:last-child th { border-bottom: 0; }
+table.squad th, table.squad td { vertical-align: top; }
+table.squad .player-col { position: sticky; left: 0; background: var(--card); min-width: 128px; max-width: 170px; white-space: normal; font-weight: 400; z-index: 1; }
+table.squad thead .player-col { font-weight: 600; }
+table.squad .team { font-weight: 600; margin-right: 4px; }
+table.squad td.gw { min-width: 52px; text-align: center; padding: 5px 3px; }
+table.squad td.gw .pts { display: block; font-variant-numeric: tabular-nums; color: var(--mute); }
+table.squad td.gw .opp { display: flex; flex-direction: column; font-size: 11px; color: var(--mute); line-height: 1.25; }
+table.squad td.gw.starter { background: var(--acc-soft); }
+table.squad td.gw.starter .pts { color: var(--ink); font-weight: 700; }
+.tag { display: inline-block; font-size: 11px; font-weight: 600; padding: 0 6px; border-radius: 999px; vertical-align: 1px; }
+.tag.warn { background: var(--warn-soft); color: var(--warn); }
+.tag.bad { background: var(--bad-soft); color: var(--err); }
+.news { display: block; font-size: 11.5px; color: var(--mute); line-height: 1.3; margin-top: 2px; }
 
 @media (max-width: 420px) {
   h1 { font-size: 21px; }
