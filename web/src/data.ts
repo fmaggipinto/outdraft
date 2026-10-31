@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { EntryHistory } from "./analysis/ranks";
+import type { Trades } from "./analysis/transactionLog";
 import type { EntryPublic } from "./findLeague";
 import { CACHE_NAME, loadJson, NotFoundError } from "./offlineCache";
 import type { Distributions, ElementStatus, Game, LeagueDetails, Picks, Projections, Results, Transactions } from "./types";
@@ -78,6 +79,8 @@ export const fetchPicks = (entryId: number, gw: number) =>
 
 /** A Manager's points per gameweek (Classic League ranks, points on the bench). */
 export const fetchHistory = (entryId: number) => getJson<EntryHistory>(`/api/fpl/entry/${entryId}/history`);
+
+export const fetchTrades = (id: number) => getJson<Trades>(`/api/fpl/draft/league/${id}/trades`);
 
 export const fetchEntryPublic = (entryId: number) =>
   getJson<EntryPublic>(`/api/fpl/entry/${entryId}/public`);

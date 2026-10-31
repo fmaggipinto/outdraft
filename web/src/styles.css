@@ -400,3 +400,17 @@ section[aria-labelledby="table-h"] td.left { white-space: normal; overflow-wrap:
 .xi-chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px; }
 .xi-chips li { border: 1.5px solid var(--rule); padding: 2px 8px; font-size: 13px; }
 .xi-chips li.new { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 700; }
+
+/* Transaction log */
+.log { list-style: none; margin: 0 0 10px; padding: 0; }
+.log li { padding: 8px 0; border-top: 1px solid var(--rule); }
+.log li:first-child { border-top: 0; }
+.log li.me { background: var(--highlight); margin: 0 -16px; padding: 8px 16px; }
+.log p { margin: 0; }
+.log .gw { font-family: "Barlow Condensed", sans-serif; font-weight: 700; letter-spacing: 0.08em; color: var(--muted); margin-right: 8px; }
+.log .team { font-weight: 700; }
+.log .tag { margin-left: 8px; }
+.log .tag.kind-trade { border-color: var(--accent); color: var(--accent-text); }
+.log-move { display: flex; flex-wrap: wrap; gap: 2px 14px; margin-top: 2px !important; }
+.log-move .in { color: var(--win); font-weight: 600; }
+.log-move .out { color: var(--loss-text); }
