@@ -9,6 +9,17 @@ Outdraft is a static PWA with no accounts and no stored user data. A scheduled P
 - [docs/CONTEXT.md](docs/CONTEXT.md): the domain glossary. Use these terms in code, issues and UI.
 - [docs/adr/](docs/adr/): architecture decisions.
 - [docs/fpl_draft.py](docs/fpl_draft.py): the original single-file Python model the app is built from.
+- [docs/data-format.md](docs/data-format.md): the JSON files the Model job publishes to `data/`.
+
+## Model job
+
+`model/` holds the Model as a dependency-free Python package. The "Model job" GitHub Actions workflow runs it on a schedule and commits Projections and Snapshots to `data/`.
+
+```bash
+cd model
+python -m outdraft_model --out ../data      # one run against the live FPL Draft API
+pip install pytest && python -m pytest      # tests, on recorded API responses
+```
 
 ## Status
 

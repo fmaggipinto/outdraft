@@ -1,0 +1,47 @@
+name: Model job
+
+# Publishes Projections and Snapshots to data/. Runs every 15 minutes; the job
+# itself skips unless it is the top of the hour or a Gameweek deadline is
+# within 6 hours (scheduled runs can be delayed, so near deadlines we run often).
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: model-job
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Run the Model job
+        working-directory: model
+        run: python -m outdraft_model --out ../data ${{ github.event_name == 'schedule' && '--scheduled' || '' }}
+
+      - name: Commit published data
+        run: |
+          git add data
+          if git diff --cached --quiet; then
+            echo "No changes to publish."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Publish Projections ($(date -u +%Y-%m-%dT%H:%MZ))"
+          for i in 1 2 3; do
+            git pull --rebase origin "${GITHUB_REF_NAME}" && git push && exit 0
+            sleep 5
+          done
+          exit 1
