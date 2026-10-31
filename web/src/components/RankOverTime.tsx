@@ -1,11 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { LeagueAnalysis } from "../analysis/league";
-import { classicRanks, h2hRanks, type EntryHistory, type RankHistory } from "../analysis/ranks";
-import { fetchHistory } from "../data";
+import { useRankHistory } from "../seasonHistory";
 import { ordinal } from "../format";
 import { YouTag } from "./ClaimCard";
-
-type Load = { kind: "loading" } | { kind: "error" } | { kind: "ready"; data: RankHistory };
 
 // Drawn at roughly phone width, so text keeps its size on a phone.
 const W = 340, H = 220, LEFT = 22, RIGHT = 10, TOP = 10, BOTTOM = 22;
@@ -14,23 +11,8 @@ const W = 340, H = 220, LEFT = 22, RIGHT = 10, TOP = 10, BOTTOM = 22;
  * Claimed Manager's line is accent and thicker; tapping a Manager in the
  * legend highlights theirs (docs/design.md §4). */
 export function RankOverTime({ league, lastFinished, me }: { league: LeagueAnalysis; lastFinished: number; me: number | null }) {
-  const [load, setLoad] = useState<Load>({ kind: "loading" });
+  const load = useRankHistory(league, lastFinished);
   const [picked, setPicked] = useState<number | null>(null);
-
-  useEffect(() => {
-    let live = true;
-    if (league.format === "h2h") {
-      setLoad({ kind: "ready", data: h2hRanks(league) });
-      return;
-    }
-    Promise.all(league.managers.map(async (m) => [m.entryId, await fetchHistory(m.entryId)] as [number, EntryHistory]))
-      .then((list) => live && setLoad({ kind: "ready", data: classicRanks(league, new Map(list), lastFinished) }))
-      .catch((e) => {
-        console.error("Loading League history failed", e);
-        if (live) setLoad({ kind: "error" });
-      });
-    return () => { live = false; };
-  }, [league, lastFinished]);
 
   const n = league.managers.length;
   const chart = useMemo(() => {

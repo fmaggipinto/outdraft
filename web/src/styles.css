@@ -358,3 +358,16 @@ body:has(.tabbar) footer { padding-bottom: 88px; }
 .rank-legend .name { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rank-legend .path { margin-left: auto; color: var(--muted); font-weight: 400; font-size: 12.5px; white-space: nowrap; }
 .rank-legend .tag { margin-left: 0; }
+
+/* Points per gameweek */
+.ppg-chart { width: 100%; max-width: 560px; height: auto; display: block; margin: 0 auto; }
+.ppg-chart .grid { stroke: var(--rule); stroke-width: 1; }
+.ppg-chart .axis { fill: var(--muted); font-family: "Barlow Condensed", sans-serif; font-weight: 700; font-size: 12px; }
+.ppg-chart .bar { fill: var(--accent); }
+.ppg-chart .avg { fill: none; stroke: var(--ink); stroke-width: 2.5; }
+.ppg-chart .best { fill: var(--win); stroke: var(--card); stroke-width: 1.5; }
+.ppg-key { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.ppg-key .k { display: inline-block; margin-right: 6px; vertical-align: middle; }
+.ppg-key .k.bar { width: 10px; height: 12px; background: var(--accent); }
+.ppg-key .k.avg { width: 18px; height: 0; border-top: 2.5px solid var(--ink); }
+.ppg-key .k.best { width: 9px; height: 9px; background: var(--win); border-radius: 50% !important; }

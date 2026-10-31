@@ -136,7 +136,7 @@ test("explains a Manager who isn't in the League", async ({ page }) => {
 test("shows Head-to-head table columns for a Head-to-head League", async ({ page }) => {
   await page.goto("/league/130000");
   await expect(page.getByText(/Head-to-head · 8 Managers/)).toBeVisible();
-  await expect(page.getByRole("columnheader", { name: "W" })).toBeVisible();
+  await expect(page.getByRole("columnheader", { name: "W", exact: true })).toBeVisible();
 });
 
 test("explains an unknown League ID", async ({ page }) => {
@@ -205,4 +205,21 @@ test("charts every Manager's rank over time and highlights one from the legend",
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
   expect(overflow).toBeLessThanOrEqual(0);
+});
+
+test("shows points per gameweek against the League average and best", async ({ page }) => {
+  const histories: string[] = [];
+  page.on("request", (r) => { if (r.url().endsWith("/history")) histories.push(r.url()); });
+  await page.goto("/league/5000");
+  const section = page.getByRole("region", { name: "Points per gameweek" });
+  await expect(section.locator("circle.best")).toHaveCount(8);
+  await expect(section.locator("rect.bar")).toHaveCount(0);
+  await expect(section).toContainText("Claim your Manager to see your own points as bars.");
+
+  await page.getByLabel("Are you in this League?").selectOption({ label: "Team C (Manager C)" });
+  await expect(section.locator("rect.bar")).toHaveCount(8);
+  await expect(section.locator("polyline.avg")).toHaveCount(1);
+  await expect(section.locator(".ppg-key")).toContainText("Team C");
+  // Both Season charts share one history request per Manager.
+  expect(histories).toHaveLength(8);
 });

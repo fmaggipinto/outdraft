@@ -73,3 +73,23 @@ export function h2hRanks(league: LeagueAnalysis): RankHistory {
   }
   return { gameweeks, ranks, points };
 }
+
+export interface GameweekSummary {
+  gameweek: number;
+  /** League average of the Managers who played that gameweek. */
+  average: number;
+  /** The gameweek's best score. */
+  best: number;
+}
+
+/** The League average and best score in each finished gameweek. */
+export function gameweekSummaries(h: RankHistory): GameweekSummary[] {
+  return h.gameweeks.map((gameweek, i) => {
+    const scores = [...h.points.values()].map((p) => p[i]).filter((x): x is number => x != null);
+    return {
+      gameweek,
+      average: scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : 0,
+      best: scores.length ? Math.max(...scores) : 0,
+    };
+  });
+}

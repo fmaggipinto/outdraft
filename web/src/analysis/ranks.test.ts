@@ -7,7 +7,7 @@ import h2hStatus from "../../tests/fixtures/h2h-element-status.json";
 import projectionsJson from "../../tests/fixtures/projections.json";
 import type { ElementStatus, LeagueDetails, Projections } from "../types";
 import { analyseLeague } from "./league";
-import { classicRanks, h2hRanks, type EntryHistory } from "./ranks";
+import { classicRanks, gameweekSummaries, h2hRanks, type EntryHistory } from "./ranks";
 
 const projections = projectionsJson as unknown as Projections;
 const classic = analyseLeague(classicDetails as LeagueDetails, classicStatus as ElementStatus, projections);
@@ -63,5 +63,30 @@ describe("h2hRanks", () => {
       const sum = r.points.get(m.entryId)!.reduce<number>((s, x) => s + (x ?? 0), 0);
       expect(sum).toBe(m.table.pointsFor);
     }
+  });
+});
+
+describe("gameweekSummaries", () => {
+  const r = classicRanks(classic, histories, projections.based_on_gameweek);
+  const s = gameweekSummaries(r);
+
+  it("has the average and best score for every finished gameweek", () => {
+    expect(s.map((x) => x.gameweek)).toEqual(r.gameweeks);
+    for (const [i, x] of s.entries()) {
+      const scores = classic.managers.map((m) => r.points.get(m.entryId)![i]!);
+      expect(x.best).toBe(Math.max(...scores));
+      expect(x.average).toBeCloseTo(scores.reduce((a, b) => a + b, 0) / scores.length);
+      expect(x.average).toBeLessThanOrEqual(x.best);
+    }
+  });
+
+  it("averages only the Managers who played that gameweek", () => {
+    const h2h = h2hRanks(analyseLeague(h2hDetails as LeagueDetails, h2hStatus as ElementStatus, projections));
+    const late = new Map(h2h.points);
+    const [first] = late.keys();
+    late.set(first, late.get(first)!.map((x, i) => (i === 0 ? null : x)));
+    const summary = gameweekSummaries({ ...h2h, points: late })[0];
+    const others = [...late.values()].map((p) => p[0]).filter((x): x is number => x != null);
+    expect(summary.average).toBeCloseTo(others.reduce((a, b) => a + b, 0) / others.length);
   });
 });

@@ -4,6 +4,7 @@ import type { Horizon, LeagueAnalysis, ManagerAnalysis } from "../analysis/leagu
 import { useClaim } from "../claim";
 import { ClaimCard, YouTag } from "../components/ClaimCard";
 import { MatchupsSection } from "../components/MatchupsSection";
+import { PointsPerGameweek } from "../components/PointsPerGameweek";
 import { RankOverTime } from "../components/RankOverTime";
 import { Screen } from "../components/Screen";
 import { SeasonByPosition } from "../components/SeasonByPosition";
@@ -42,6 +43,7 @@ export function League({ id }: { id: number }) {
           <SquadStrength league={league} horizon={horizon} setHorizon={setHorizon} me={me} />
           <h2 className="season-title">Season</h2>
           <RankOverTime league={league} lastFinished={projections.based_on_gameweek} me={me} />
+          <PointsPerGameweek league={league} lastFinished={projections.based_on_gameweek} me={me} />
           <SeasonByPosition league={league} projections={projections} status={state.status} me={me} />
         </>
       ) : (
