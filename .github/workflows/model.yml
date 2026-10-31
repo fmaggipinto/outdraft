@@ -8,7 +8,14 @@ on:
   schedule:
     - cron: "7 * * * *"           # hourly: always runs
     - cron: "22,37,52 * * * *"    # in between: only near a deadline
+  # Also started by hand, and by the Netlify scheduled function in
+  # web/netlify/functions/trigger-model.mts as a backup for the schedule.
   workflow_dispatch:
+    inputs:
+      only_near_deadline:
+        description: "Skip unless a Gameweek deadline is within 6 hours"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -30,7 +37,7 @@ jobs:
 
       - name: Run the Model job
         working-directory: model
-        run: python -m outdraft_model --out ../data ${{ github.event.schedule == '22,37,52 * * * *' && '--only-near-deadline' || '' }}
+        run: python -m outdraft_model --out ../data ${{ (github.event.schedule == '22,37,52 * * * *' || inputs.only_near_deadline) && '--only-near-deadline' || '' }}
 
       - name: Commit published data
         run: |
