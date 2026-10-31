@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { EntryPublic } from "./findLeague";
 import { CACHE_NAME, loadJson, NotFoundError } from "./offlineCache";
-import type { Distributions, ElementStatus, Game, LeagueDetails, Projections, Transactions } from "./types";
+import type { Distributions, ElementStatus, Game, LeagueDetails, Projections, Results, Transactions } from "./types";
 
 export { NotFoundError };
 
@@ -58,6 +58,8 @@ export const projectionsUrl = DATA_URL + "projections.json";
 export const leagueUrls = (id: number) => [`/api/fpl/league/${id}/details`, `/api/fpl/league/${id}/element-status`];
 
 export const fetchProjections = () => getJson<Projections>(projectionsUrl);
+
+export const fetchResults = () => getJson<Results>(DATA_URL + "results.json");
 
 export const fetchDistributions = () => getJson<Distributions>(DATA_URL + "distributions.json");
 

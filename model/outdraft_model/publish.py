@@ -125,6 +125,17 @@ def squad_rules(rules):
             "max_play": {str(p): rules[f"max_play_{n}"] for p, n in names.items()}}
 
 
+def results(model, last, stamp):
+    """Actual points per Player per finished gameweek. Players who haven't
+    scored a point (positive or negative) all season are left out."""
+    players = {}
+    for pid in sorted(model.hist):
+        pts = [int(x) for x in model.hist[pid]["total_points"][:last]]
+        if any(pts):
+            players[str(pid)] = pts
+    return {"updated_at": stamp, "gameweeks": list(range(1, last + 1)), "players": players}
+
+
 def score_distributions(model, gws, params, proj):
     """{Player id: [compact Score distribution per gameweek]}. Players projected
     0 in every gameweek are left out: they always score 0."""
@@ -209,6 +220,9 @@ def run(api, out_dir, now):
         }
         if write_snapshot(snap_dir, snapshot, now):
             summary["written"].append(snapshot_path(snap_dir, nxt).relative_to(out).as_posix())
+
+    if write_if_changed(out / "results.json", results(model, last, stamp)):
+        summary["written"].append("results.json")
 
     if write_text_if_changed(out / "deadlines.ics", deadlines_ics(season.events, now)):
         summary["written"].append("deadlines.ics")
