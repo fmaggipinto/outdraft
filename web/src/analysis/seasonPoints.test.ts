@@ -6,7 +6,7 @@ import projectionsJson from "../../tests/fixtures/projections.json";
 import resultsJson from "../../tests/fixtures/results.json";
 import type { ElementStatus, LeagueDetails, Picks, Projections, Results } from "../types";
 import { analyseLeague } from "./league";
-import { currentSquadPoints, POSITIONS, seasonPointsByPosition, sortRows, startingXI } from "./seasonPoints";
+import { benchPoints, currentSquadPoints, POSITIONS, seasonPointsByPosition, sortRows, startingXI } from "./seasonPoints";
 
 const projections = projectionsJson as unknown as Projections;
 const results = resultsJson as Results;
@@ -109,5 +109,37 @@ describe("currentSquadPoints", () => {
       expect(r.top).toHaveLength(3);
       expect(r.top.every((s) => s.stillOwned && r.manager.squad.includes(s.player.id))).toBe(true);
     }
+  });
+});
+
+describe("benchPoints", () => {
+  const sumOf = (ids: number[], i: number) => ids.reduce((t, id) => t + (results.players[String(id)]?.[i] ?? 0), 0);
+
+  it("is everyone's points minus the starters', for every recorded gameweek", () => {
+    for (const [entry, byGw] of picks) {
+      const b = benchPoints(byGw, results);
+      expect(b.rows.map((r) => r.gameweek)).toEqual(results.gameweeks);
+      for (const r of b.rows) {
+        const i = results.gameweeks.indexOf(r.gameweek);
+        const p = byGw.get(r.gameweek)!;
+        expect(r.points).toBe(sumOf(p.picks.map((x) => x.element), i) - sumOf(startingXI(p), i));
+      }
+      expect(b.total).toBe(b.rows.reduce((s, r) => s + r.points, 0));
+      expect(entry).toBeGreaterThan(0);
+    }
+  });
+
+  it("finds real bench points in the recorded League (the API's own figure is always 0)", () => {
+    const totals = [...picks.values()].map((byGw) => benchPoints(byGw, results).total);
+    expect(totals.some((t) => t > 0)).toBe(true);
+  });
+
+  it("counts a subbed-on bench Player as a starter, not as bench", () => {
+    const lineup: Picks = {
+      picks: Array.from({ length: 15 }, (_, i) => ({ element: 1000 + i, position: i + 1 })),
+      subs: [{ element_in: 1012, element_out: 1003 }],
+    };
+    const fake: Results = { updated_at: "", gameweeks: [1], players: { 1012: [7], 1003: [0], 1013: [2] } };
+    expect(benchPoints(new Map([[1, lineup]]), fake).rows[0].points).toBe(2);
   });
 });
