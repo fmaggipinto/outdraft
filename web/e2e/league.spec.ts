@@ -250,3 +250,22 @@ test("shows the current Squad's season points by position, which isn't the Leagu
   await expect(rows.first().locator(".top3")).toContainText(/1\. .+ \d+/);
   await expect(rows.first().locator(".left-squad")).toHaveCount(0);
 });
+
+test("team sheet shows form, last 6 scores, next Fixtures with difficulty and the Best XI", async ({ page }) => {
+  await page.goto("/league/5000/squad");
+  const sheet = page.getByRole("list", { name: "Team sheet" });
+  const rows = sheet.locator(".sheet-row");
+  await expect(rows).toHaveCount(15);
+  // Exactly 11 starters for the next gameweek, the rest on the bench.
+  await expect(sheet.locator(".tag.xi")).toHaveCount(11);
+  await expect(sheet.locator(".tag.benched")).toHaveCount(4);
+
+  const first = rows.first();
+  await expect(first.locator(".form")).toContainText(/xG\+xA \d\.\d\d\/90 · starts \d\/6/);
+  await expect(first.getByRole("img", { name: /^Last 6 scores: (-?\d+, ){5}-?\d+$/ })).toBeVisible();
+  // Three gameweeks of Fixtures, each with a 1–5 difficulty spelled out.
+  const chips = first.locator(".chip");
+  expect(await chips.count()).toBeGreaterThanOrEqual(3);
+  await expect(chips.first()).toHaveAttribute("aria-label", /^GW10 (home|away) v [A-Z]{3}, difficulty [1-5] of 5$/);
+  await expect(chips.first()).toHaveText(/^[A-Za-z]{3} [1-5]$/);
+});
