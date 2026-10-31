@@ -124,8 +124,8 @@ test("claims a Manager per League, remembers it, and can clear it", async ({ pag
   await tab(page, "League").click();
   await expect(page.locator(".me")).toHaveCount(0);
 
-  // The claim never leaves the browser: only public League data and lineups are relayed.
-  expect(relayed.every((p) => /^\/api\/fpl\/(league\/\d+\/(details|element-status)|entry\/\d+\/event\/\d+)$/.test(p))).toBe(true);
+  // The claim never leaves the browser: only public League data, lineups and histories are relayed.
+  expect(relayed.every((p) => /^\/api\/fpl\/(league\/\d+\/(details|element-status)|entry\/\d+\/(event\/\d+|history))$/.test(p))).toBe(true);
 });
 
 test("explains a Manager who isn't in the League", async ({ page }) => {
@@ -174,6 +174,34 @@ test("shows Season points by position with top scorers, a Points / % share toggl
   await section.getByRole("radio", { name: "MID" }).click();
   const mids = (await rows.locator(".figure").allTextContents()).map((t) => Number(t.match(/(\d+)%/)![1]));
   expect(mids).toEqual([...mids].sort((a, b) => b - a));
+
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+  expect(overflow).toBeLessThanOrEqual(0);
+});
+
+test("charts every Manager's rank over time and highlights one from the legend", async ({ page }) => {
+  await page.goto("/league/5000");
+  await page.getByLabel("Are you in this League?").selectOption({ label: "Team C (Manager C)" });
+  const section = page.getByRole("region", { name: "Rank over time" });
+  await expect(section.getByRole("img")).toBeVisible();
+  await expect(section.locator("polyline")).toHaveCount(8);
+  await expect(section.locator("polyline.mine")).toHaveCount(1);
+
+  // The legend ends on each Manager's current table rank. Pick the 2nd-placed
+  // Manager (not Team C, who leads), so the Claimed Manager's line stays accent.
+  const table = page.getByRole("region", { name: "League table" });
+  const second = (await table.getByRole("row").nth(2).locator(".team").textContent())!;
+  expect(second).not.toBe("Team C");
+  const button = section.getByRole("button", { name: new RegExp(second) });
+  await expect(button).toContainText(/→ 2nd/);
+
+  await button.click();
+  await expect(button).toHaveAttribute("aria-pressed", "true");
+  await expect(section.locator("polyline.picked")).toHaveCount(1);
+  await expect(section.locator("polyline.mine")).toHaveCount(1);
+  await expect(section.locator("polyline.dim")).toHaveCount(6);
+  await button.click();
+  await expect(section.locator("polyline.picked")).toHaveCount(0);
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
   expect(overflow).toBeLessThanOrEqual(0);
