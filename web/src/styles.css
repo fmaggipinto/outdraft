@@ -285,3 +285,12 @@ table.ticker .fx { display: block; padding: 5px 2px; border-radius: 5px; color: 
 table.ticker td.double { display: flex; flex-direction: column; gap: 2px; }
 table.ticker td.double .fx { padding: 2px; }
 table.ticker td.blank .fx { background: var(--line); color: var(--mute); }
+
+/* Saved-data notice */
+.stale {
+  max-width: 728px; margin: 4px auto 0; padding: 10px 14px; border-radius: 12px;
+  background: var(--warn-soft); color: var(--ink); border: 1px solid var(--warn);
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+}
+@media (max-width: 760px) { .stale { margin: 4px 16px 0; } }
+.stale p { margin: 0; font-size: 14px; }

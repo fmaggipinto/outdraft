@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { navigate } from "./App";
 import { analyseLeague, type LeagueAnalysis } from "./analysis/league";
-import { fetchLeague, fetchProjections, NotFoundError } from "./data";
+import { fetchLeague, fetchProjections, isStale, leagueUrls, NotFoundError, projectionsUrl } from "./data";
 import { rememberLeague } from "./recent";
 import type { ElementStatus, Projections } from "./types";
 
@@ -25,7 +25,8 @@ export function useLeague(id: number): [LeagueState, () => void] {
     Promise.all([fetchLeague(id), fetchProjections()])
       .then(([[details, status], projections]) => {
         const ready = { kind: "ready" as const, league: analyseLeague(details, status, projections), projections, status };
-        cache.set(id, ready);
+        // Saved copies aren't kept in memory, so the next screen tries the network again.
+        if (!isStale([...leagueUrls(id), projectionsUrl])) cache.set(id, ready);
         rememberLeague({ id, name: ready.league.name });
         if (live) setState(ready);
       })
