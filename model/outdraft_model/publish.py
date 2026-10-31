@@ -91,6 +91,14 @@ def choose_params(model, last, previous):
             "backtest_gws": [xg.BACKTEST_START, last], "tuned_at": last}, True
 
 
+def squad_rules(rules):
+    """Draft lineup rules the browser needs to pick a Best XI."""
+    names = {1: "GKP", 2: "DEF", 3: "MID", 4: "FWD"}
+    return {"size": rules["size"], "play": rules["play"],
+            "min_play": {str(p): rules[f"min_play_{n}"] for p, n in names.items()},
+            "max_play": {str(p): rules[f"max_play_{n}"] for p, n in names.items()}}
+
+
 def players_table(model, season, gws, proj):
     out = []
     for pid in sorted(season.players):
@@ -140,6 +148,7 @@ def run(api, out_dir, now):
             "events": [{"gameweek": gw, "deadline": iso(season.event(gw)["deadline"]),
                         "waivers_deadline": iso(season.event(gw)["waivers_deadline"])} for gw in gws],
             "teams": [season.teams[t] for t in sorted(season.teams)],
+            "squad_rules": squad_rules(season.squad_rules),
             "fixtures": fixtures,
             "players": players_table(model, season, gws, proj),
         }

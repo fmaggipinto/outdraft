@@ -33,6 +33,9 @@ The latest Projections for the next (up to) 6 gameweeks.
   "gameweeks": [10, 11, 12, 13, 14, 15],
   "events": [{ "gameweek": 10, "deadline": "…", "waivers_deadline": "…" }],
   "teams": [{ "id": 1, "name": "Arsenal", "short_name": "ARS" }],
+  "squad_rules": { "size": 15, "play": 11,
+                   "min_play": { "1": 1, "2": 3, "3": 2, "4": 1 },
+                   "max_play": { "1": 1, "2": 5, "3": 5, "4": 3 } },
   "fixtures": [{ "gameweek": 10, "home": 9, "away": 7, "kickoff": "…" }],
   "players": [{
     "id": 1, "name": "Raya", "first_name": "David", "second_name": "Raya Martín",
@@ -45,6 +48,7 @@ The latest Projections for the next (up to) 6 gameweeks.
 ```
 
 - `based_on_gameweek`: the last finished gameweek whose data the Model used.
+- `squad_rules`: the Draft lineup rules, keyed by position. A Best XI fields `play` Players, with between `min_play` and `max_play` from each position.
 - `position`: 1 GKP, 2 DEF, 3 MID, 4 FWD.
 - `status`: `a` available, `d` doubtful, `i` injured, `s` suspended, `u`/`n` unavailable.
 - `projections[i]` is the Projection for `gameweeks[i]`. It sums over all the Player's Fixtures that gameweek (a double gameweek counts twice, a blank gameweek is 0), and has injury status applied: 0 if unavailable, scaled by `chance_next` if doubtful.
