@@ -124,8 +124,8 @@ test("claims a Manager per League, remembers it, and can clear it", async ({ pag
   await tab(page, "League").click();
   await expect(page.locator(".me")).toHaveCount(0);
 
-  // The claim never leaves the browser: only League data is relayed.
-  expect(relayed.every((p) => /^\/api\/fpl\/league\/\d+\/(details|element-status)$/.test(p))).toBe(true);
+  // The claim never leaves the browser: only public League data and lineups are relayed.
+  expect(relayed.every((p) => /^\/api\/fpl\/(league\/\d+\/(details|element-status)|entry\/\d+\/event\/\d+)$/.test(p))).toBe(true);
 });
 
 test("explains a Manager who isn't in the League", async ({ page }) => {
@@ -157,4 +157,24 @@ test("offers the deadlines calendar for Apple, Outlook and Google under More", a
   await expect(page.getByRole("link", { name: "Apple or Outlook Calendar" })).toHaveAttribute("href", `webcal://${host}/deadlines.ics`);
   await expect(page.getByRole("link", { name: "Google Calendar" })).toHaveAttribute(
     "href", `https://calendar.google.com/calendar/render?cid=${encodeURIComponent(`webcal://${host}/deadlines.ics`)}`);
+});
+
+test("shows Season points by position with top scorers, a Points / % share toggle and sorting", async ({ page }) => {
+  await page.goto("/league/5000");
+  const section = page.getByRole("region", { name: "Season points by position" });
+  const rows = section.locator(".bypos > li");
+  await expect(rows).toHaveCount(8);
+  // Each Manager's season total matches the League table.
+  const leader = await page.getByRole("region", { name: "League table" }).getByRole("row").nth(1).locator("td").last().textContent();
+  await expect(rows.first().locator(".figure")).toHaveText(`${leader} pts`);
+  await expect(rows.first().locator(".values")).toContainText(/GKP \d+\s*DEF \d+\s*MID \d+\s*FWD \d+/);
+  await expect(rows.first().locator(".top3")).toContainText(/1\. .+ \d+ · 2\. .+ \d+ · 3\. .+ \d+/);
+
+  await section.getByRole("radio", { name: "% share" }).click();
+  await section.getByRole("radio", { name: "MID" }).click();
+  const mids = (await rows.locator(".figure").allTextContents()).map((t) => Number(t.match(/(\d+)%/)![1]));
+  expect(mids).toEqual([...mids].sort((a, b) => b - a));
+
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+  expect(overflow).toBeLessThanOrEqual(0);
 });

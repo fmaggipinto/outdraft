@@ -94,6 +94,12 @@ export interface LeagueDetails {
   matches?: Match[];
 }
 
+/** entry/{id}/event/{gw}: a Manager's lineup for a gameweek (1–11 start, 12–15 bench). */
+export interface Picks {
+  picks: { element: number; position: number }[];
+  subs?: { element_in: number; element_out: number }[];
+}
+
 /** results.json: actual points per Player for each finished gameweek. */
 export interface Results {
   updated_at: string;
