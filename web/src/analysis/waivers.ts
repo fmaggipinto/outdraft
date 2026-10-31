@@ -160,3 +160,13 @@ export function rivalInterest(opts: {
   }
   return out;
 }
+
+/** The Manager's Best XI for the next gameweek if `out` were swapped for `in`. */
+export function bestXIAfterSwap(manager: ManagerAnalysis, outId: number, inId: number, projections: Projections): number[] {
+  const players = new Map(projections.players.map((p) => [p.id, p]));
+  const squad = [...manager.squad.filter((id) => id !== outId), inId];
+  return bestXI(squad.flatMap((id) => {
+    const p = players.get(id);
+    return p ? [{ id, position: p.position, points: p.projections[0] ?? 0 }] : [];
+  }), projections.squad_rules ?? DRAFT_SQUAD_RULES).ids;
+}

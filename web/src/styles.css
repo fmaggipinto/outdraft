@@ -240,8 +240,8 @@ tr.me td:first-child { box-shadow: inset 4px 0 0 var(--accent); }
 .phase-processing { border-left-color: var(--loss-bar); }
 .phase-free { border-left-color: var(--win); }
 .targets, .trades, .fa-list { list-style: none; margin: 10px 0; padding: 0; }
-.targets li { display: grid; grid-template-columns: 26px 1fr auto; gap: 10px; align-items: start; padding: 10px 0; border-top: 1px solid var(--rule); }
-.targets li:first-child, .trades li:first-child, .fa-list li:first-child { border-top: 0; }
+.targets > li { display: grid; grid-template-columns: 26px 1fr auto; gap: 10px; align-items: start; padding: 10px 0; border-top: 1px solid var(--rule); }
+.targets > li:first-child, .trades > li:first-child, .fa-list > li:first-child { border-top: 0; }
 .targets .pos { font-family: "Anton", Impact, sans-serif; color: var(--muted); font-size: 18px; text-align: right; }
 .targets .who { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 .targets .team { font-weight: 700; }
@@ -392,3 +392,11 @@ section[aria-labelledby="table-h"] td.left { white-space: normal; overflow-wrap:
 .bench-chart .base { stroke: var(--ink); stroke-width: 1.5; }
 .bench-chart .value { fill: var(--ink); font-family: "Anton", Impact, sans-serif; font-size: 13px; }
 .bench-chart .axis { fill: var(--muted); font-family: "Barlow Condensed", sans-serif; font-weight: 700; font-size: 12px; }
+
+/* Target comparison */
+.compare-toggle { justify-self: start; text-align: left; margin-top: 6px; font-size: 13.5px; }
+.target-compare { grid-column: 1 / -1; border-top: 1.5px solid var(--ink); margin-top: 8px; padding-top: 10px; }
+.xi-title { font-size: 14px; margin: 14px 0 6px; }
+.xi-chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px; }
+.xi-chips li { border: 1.5px solid var(--rule); padding: 2px 8px; font-size: 13px; }
+.xi-chips li.new { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 700; }
