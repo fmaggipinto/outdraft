@@ -27,6 +27,8 @@ export async function serveRecorded(page: Page, game: Record<string, unknown> = 
   await page.route("**/data/distributions.json", (r) => r.fulfill({ body: fixture("distributions.json"), ...json }));
   await page.route("**/api/fpl/game", (r) =>
     r.fulfill({ body: JSON.stringify({ ...JSON.parse(fixture("game.json")), ...game }), ...json }));
+  // Neither recorded League has made a Trade.
+  await page.route("**/api/fpl/draft/league/*/trades", (r) => r.fulfill({ body: '{"trades":[]}', ...json }));
   await page.route("**/api/fpl/draft/league/*/transactions", (r) => {
     const id = new URL(r.request().url()).pathname.match(/league\/(\d+)\//)![1];
     return leagues[id]

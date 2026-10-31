@@ -125,8 +125,8 @@ test("claims a Manager per League, remembers it, and can clear it", async ({ pag
   await expect(page.locator(".me")).toHaveCount(0);
 
   // The claim never leaves the browser: only public League data, lineups, histories,
-  // the game state and the League's transactions are relayed.
-  expect(relayed.filter((p) => !/^\/api\/fpl\/(game|league\/\d+\/(details|element-status)|draft\/league\/\d+\/transactions|entry\/\d+\/(event\/\d+|history))$/.test(p))).toEqual([]);
+  // the game state and the League's transactions and Trades are relayed.
+  expect(relayed.filter((p) => !/^\/api\/fpl\/(game|league\/\d+\/(details|element-status)|draft\/league\/\d+\/(transactions|trades)|entry\/\d+\/(event\/\d+|history))$/.test(p))).toEqual([]);
 });
 
 test("explains a Manager who isn't in the League", async ({ page }) => {
@@ -278,4 +278,19 @@ test("shows points left on the bench, worked out from lineups", async ({ page })
   const total = Number((await section.locator(".note").textContent())!.match(/(\d+) pts/)![1]);
   expect(total).toBeGreaterThan(0);   // the Draft API's own figure is always 0
   await expect(section.getByRole("img")).toHaveAttribute("aria-label", /points left on the bench: GW1 \d+, .+GW8 \d+$/);
+});
+
+test("lists the League's waiver claims, free-agent moves and Trades, newest first", async ({ page }) => {
+  const recorded = JSON.parse(fixture("classic-transactions.json")).transactions.filter((t: { result: string }) => t.result === "a");
+  await page.goto("/league/5000");
+  const section = page.getByRole("region", { name: "Transaction log" });
+  await expect(section.locator(".note")).toHaveText(`${recorded.length} moves`);
+  const rows = section.locator(".log > li");
+  await expect(rows).toHaveCount(20);
+  const gws = (await rows.locator(".gw").allTextContents()).map((t) => Number(t.slice(2)));
+  expect(gws).toEqual([...gws].sort((a, b) => b - a));
+  await expect(rows.first().locator(".log-move")).toContainText(/In: .+Out: .+/);
+
+  await section.getByRole("button", { name: /Show more/ }).click();
+  await expect(rows).toHaveCount(Math.min(40, recorded.length));
 });

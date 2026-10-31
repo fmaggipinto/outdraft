@@ -7,6 +7,7 @@ import { MatchupsSection } from "../components/MatchupsSection";
 import { PointsPerGameweek } from "../components/PointsPerGameweek";
 import { RankOverTime } from "../components/RankOverTime";
 import { Screen } from "../components/Screen";
+import { TransactionLog } from "../components/TransactionLog";
 import { useRankHistory } from "../seasonHistory";
 import { PositionStacks, SeasonByPosition } from "../components/SeasonByPosition";
 import { currentSquadPoints } from "../analysis/seasonPoints";
@@ -50,6 +51,7 @@ export function League({ id }: { id: number }) {
           <PositionStacks id="holding-h" title="Current Squad's season points by position" me={me} status={null}
             rows={currentSquadPoints(league.managers, projections.players)}
             note="Season points of the Players each Manager holds now, wherever they earned them: another Squad, the bench, or before being signed. Not the League score, and not Squad strength. Below each bar: the Squad's top 3 scorers." />
+          <TransactionLog league={league} projections={projections} me={me} />
         </>
       ) : (
         <div className="card" role="status">
