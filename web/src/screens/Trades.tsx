@@ -3,6 +3,7 @@ import { winWinTrades, type Trade } from "../analysis/trades";
 import { TARGET_HORIZON } from "../analysis/waivers";
 import { useClaim } from "../claim";
 import { ClaimCard } from "../components/ClaimCard";
+import { PlayerTags, PlayerTagsProvider, useTagContext } from "../components/PlayerTags";
 import { Screen } from "../components/Screen";
 import { pts } from "../format";
 import { gwRange } from "../horizon";
@@ -19,6 +20,8 @@ export function Trades({ id }: { id: number }) {
   const [rival, setRival] = useState<number | "all">("all");
 
   const manager = state.kind === "ready" ? state.league.managers.find((m) => m.entryId === claim) : undefined;
+  const tagContext = useTagContext(id, state.kind === "ready" ? state.status : undefined,
+    state.kind === "ready" ? state.projections : undefined, manager);
   const trades = useMemo(
     () => (state.kind === "ready" && manager ? winWinTrades(manager, state.league.managers, state.projections) : []),
     [state, manager],
@@ -42,6 +45,7 @@ export function Trades({ id }: { id: number }) {
 
   return (
     <Screen title="Trades" kicker={league.name} projections={projections} league={{ id, tab: "trades", trades: league.trades }}>
+      <PlayerTagsProvider value={tagContext}>
       {!league.drafted ? (
         <div className="card" role="status"><p>{league.name} hasn't drafted yet.</p></div>
       ) : !manager ? (
@@ -87,6 +91,7 @@ export function Trades({ id }: { id: number }) {
           </p>
         </section>
       )}
+      </PlayerTagsProvider>
     </Screen>
   );
 }
@@ -96,7 +101,7 @@ function TradeCard({ t, short }: { t: Trade; short: Map<number, string> }) {
     ps.map((p, i) => (
       <span key={p.id}>
         {i > 0 && " + "}
-        <b>{p.name}</b> <span className="muted small">{POS[p.position]} · {short.get(p.team)}</span>
+        <b>{p.name}</b> <span className="muted small">{POS[p.position]} · {short.get(p.team)}</span><PlayerTags p={p} />
       </span>
     ));
   return (

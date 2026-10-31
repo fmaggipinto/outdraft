@@ -2,23 +2,15 @@ import { useMemo, useState } from "react";
 import { freeAgents, SORTS, type SortKey } from "../analysis/freeAgents";
 import { pts } from "../format";
 import { gwRange, HorizonToggle, useHorizon } from "../horizon";
-import type { ElementStatus, Position, ProjectedPlayer, Projections } from "../types";
+import type { ElementStatus, Position, Projections } from "../types";
+import { PlayerTags } from "./PlayerTags";
 
 export const POS: Record<Position, string> = { 1: "GKP", 2: "DEF", 3: "MID", 4: "FWD" };
 const PAGE = 25;
 
-export function StatusTag({ p }: { p: ProjectedPlayer }) {
-  const text = {
-    d: p.chance_next != null ? `Doubt ${p.chance_next}%` : "Doubt",
-    i: "Injured", s: "Suspended", u: "Unavailable", n: "Unavailable",
-  }[p.status];
-  return text ? <span className={`tag ${p.status === "d" ? "warn" : "bad"}`}>{text}</span> : null;
-}
-
-export function FreeAgentBrowser({ status, projections, locked, onCompare }: {
+export function FreeAgentBrowser({ status, projections, onCompare }: {
   status: ElementStatus;
   projections: Projections;
-  locked: Set<number>;
   onCompare: (id: number) => void;
 }) {
   const [horizon, setHorizon] = useHorizon();
@@ -66,8 +58,7 @@ export function FreeAgentBrowser({ status, projections, locked, onCompare }: {
                 <span>
                   <span className="team">{r.player.name}</span>{" "}
                   <span className="muted small">{POS[r.player.position]} · {short.get(r.player.team)}</span>
-                  {locked.has(r.player.id) && <span className="tag warn">On waivers</span>}
-                  <StatusTag p={r.player} />
+                  <PlayerTags p={r.player} />
                 </span>
                 <span className="muted small stats">
                   xG+xA {r.xgi.toFixed(2)}/90 · {r.player.minutes} mins · {r.player.total_points} pts

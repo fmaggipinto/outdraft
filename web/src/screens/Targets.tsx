@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { LeagueAnalysis, ManagerAnalysis } from "../analysis/league";
 import {
-  bestXIAfterSwap, lockedOnWaivers, rivalInterest, TARGET_HORIZON, waiverPhase, waiverTargets, type Phase, type Rival, type WaiverTarget,
+  bestXIAfterSwap, isProtected, lockedOnWaivers, rivalInterest, TARGET_HORIZON, waiverPhase, waiverTargets, type Phase, type Rival, type WaiverTarget,
 } from "../analysis/waivers";
 import { useClaim } from "../claim";
 import { ClaimCard, YouTag } from "../components/ClaimCard";
-import { FreeAgentBrowser, StatusTag } from "../components/FreeAgentBrowser";
+import { FreeAgentBrowser } from "../components/FreeAgentBrowser";
+import { PlayerTags, PlayerTagsProvider } from "../components/PlayerTags";
 import { CompareTable, PlayerCompare } from "../components/PlayerCompare";
 import { Screen } from "../components/Screen";
 import { fetchGame, fetchTransactions } from "../data";
@@ -101,9 +102,19 @@ function WaiverView({ league, projections, manager, setClaim, game, transactions
   const event = projections.events.find((e) => e.gameweek === nextGw) ?? projections.events[0];
   const short = new Map(projections.teams.map((t) => [t.id, t.short_name]));
   const gws = gwRange(projections.gameweeks.slice(0, TARGET_HORIZON));
+  // Tags on every Player here: claim only from this phase and lock list, and
+  // protected for the Claimed Manager's Players the Waiver rules never drop.
+  const tagContext = useMemo(() => {
+    const players = new Map(projections.players.map((p) => [p.id, p]));
+    const protectedIds = new Set((manager?.squad ?? []).filter((id) => {
+      const p = players.get(id);
+      return p && isProtected(p, projections.based_on_gameweek);
+    }));
+    return { phase, locked, protectedIds };
+  }, [phase, locked, manager, projections]);
 
   return (
-    <>
+    <PlayerTagsProvider value={tagContext}>
       <PhaseBanner phase={phase} event={event} />
       {!manager ? (
         <>
@@ -140,9 +151,9 @@ function WaiverView({ league, projections, manager, setClaim, game, transactions
         </section>
       )}
       <WaiverOrder league={league} me={manager?.entryId ?? null} />
-      <FreeAgentBrowser status={status} projections={projections} locked={locked} onCompare={compareWith} />
+      <FreeAgentBrowser status={status} projections={projections} onCompare={compareWith} />
       <PlayerCompare ref={compareRef} league={league} status={status} projections={projections} ids={compareIds} setIds={setCompare} />
-    </>
+    </PlayerTagsProvider>
   );
 }
 
@@ -187,14 +198,13 @@ function Target({ rank, t, short, phase, rivals, open, onToggle, manager, projec
           <span className="muted small">{verb} </span>
           <span className="team">{t.in.name}</span>{" "}
           <span className="muted small">{POS[t.in.position]} · {short.get(t.in.team)}</span>
-          {t.claimOnly && phase !== "free" && <span className="tag warn">On waivers</span>}
           {contested && <span className="tag bad">Contested</span>}
-          <StatusTag p={t.in} />
+          <PlayerTags p={t.in} />
         </span>
         <span>
           <span className="muted small">for </span>
           <span>{t.out.name}</span>
-          <StatusTag p={t.out} />
+          <PlayerTags p={t.out} />
         </span>
         <span className="muted small proj">
           {t.in.projections.slice(0, TARGET_HORIZON).map(pts).join(" · ")}
