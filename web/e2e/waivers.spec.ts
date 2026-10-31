@@ -54,3 +54,32 @@ test("says when waivers are being processed", async ({ page }) => {
   await page.goto("/league/5000/targets");
   await expect(page.getByRole("region", { name: "Waiver phase" })).toContainText("FPL is processing claims");
 });
+
+test("expands a Waiver target into a comparison with the Player you'd drop", async ({ page }) => {
+  await page.clock.setFixedTime(beforeWaivers);
+  await serveRecorded(page);
+  await page.goto("/league/5000/targets");
+  await page.getByLabel("Are you in this League?").selectOption({ label: "Team C (Manager C)" });
+  const items = page.getByRole("region", { name: "Waiver targets" }).locator(".targets > li");
+  const first = items.first();
+  const toggle = first.getByRole("button", { name: /^Compare with / });
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+  await toggle.click();
+  await expect(first.getByRole("button", { name: "Hide comparison" })).toHaveAttribute("aria-expanded", "true");
+
+  const table = first.getByRole("table");
+  for (const row of ["xG+xA /90", "Minutes", "Starts, last 6", "Season points", "Last 6 scores", "Next fixtures"]) {
+    await expect(table.getByRole("rowheader", { name: row })).toBeVisible();
+  }
+  const xi = first.getByRole("list", { name: "Best XI after the swap" }).getByRole("listitem");
+  await expect(xi).toHaveCount(11);
+  await expect(first.locator(".xi-chips li.new")).toHaveCount(1);
+
+  // Opening another target closes the first.
+  await items.nth(1).getByRole("button", { name: /^Compare with / }).click();
+  await expect(first.getByRole("table")).toHaveCount(0);
+  await expect(items.nth(1).getByRole("table")).toBeVisible();
+
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+  expect(overflow).toBeLessThanOrEqual(0);
+});

@@ -6,7 +6,7 @@ import gameJson from "../../tests/fixtures/game.json";
 import projectionsJson from "../../tests/fixtures/projections.json";
 import type { ElementStatus, Game, LeagueDetails, Projections, Transactions } from "../types";
 import { analyseLeague } from "./league";
-import { isProtected, lockedOnWaivers, rivalInterest, waiverPhase, waiverTargets } from "./waivers";
+import { bestXIAfterSwap, isProtected, lockedOnWaivers, rivalInterest, waiverPhase, waiverTargets } from "./waivers";
 
 const projections = projectionsJson as unknown as Projections;
 const status = classicStatus as ElementStatus;
@@ -152,5 +152,23 @@ describe("rivalInterest", () => {
     const useless = projections.players.find((p) => p.projections.every((x) => x === 0) && p.position === 4)!;
     const none = rivalInterest({ me, managers: league.managers, status, projections, playerIds: [useless.id] });
     expect(none.get(useless.id)).toEqual([]);
+  });
+});
+
+describe("bestXIAfterSwap", () => {
+  const manager = league.managers[0];
+  const t = waiverTargets({ manager, status, projections, locked: new Set(), phase: "waivers" })[0];
+
+  it("is the League analysis's Best XI for the swapped Squad", () => {
+    const swapped = {
+      element_status: status.element_status.map((e) =>
+        e.element === t.out.id ? { ...e, owner: null } : e.element === t.in.id ? { ...e, owner: manager.entryId } : e),
+    };
+    const after = analyseLeague(details, swapped, projections).managers.find((m) => m.entryId === manager.entryId)!;
+    expect(bestXIAfterSwap(manager, t.out.id, t.in.id, projections).sort()).toEqual([...after.bestXIs[0].ids].sort());
+  });
+
+  it("never includes the dropped Player", () => {
+    expect(bestXIAfterSwap(manager, t.out.id, t.in.id, projections)).not.toContain(t.out.id);
   });
 });

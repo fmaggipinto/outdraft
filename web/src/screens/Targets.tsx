@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { LeagueAnalysis, ManagerAnalysis } from "../analysis/league";
 import {
-  lockedOnWaivers, rivalInterest, TARGET_HORIZON, waiverPhase, waiverTargets, type Phase, type Rival, type WaiverTarget,
+  bestXIAfterSwap, lockedOnWaivers, rivalInterest, TARGET_HORIZON, waiverPhase, waiverTargets, type Phase, type Rival, type WaiverTarget,
 } from "../analysis/waivers";
 import { useClaim } from "../claim";
 import { ClaimCard, YouTag } from "../components/ClaimCard";
 import { FreeAgentBrowser, StatusTag } from "../components/FreeAgentBrowser";
-import { PlayerCompare } from "../components/PlayerCompare";
+import { CompareTable, PlayerCompare } from "../components/PlayerCompare";
 import { Screen } from "../components/Screen";
 import { fetchGame, fetchTransactions } from "../data";
 import { ordinal, pts, relative, when } from "../format";
@@ -81,6 +81,7 @@ function WaiverView({ league, projections, manager, setClaim, game, transactions
   const locked = useMemo(() => lockedOnWaivers(status, transactions, nextGw), [status, transactions, nextGw]);
   const [compare, setCompare] = useState<[number | null, number | null] | null>(null);
   const compareRef = useRef<HTMLElement>(null);
+  const [openTarget, setOpenTarget] = useState<number | null>(null);
   const targets = useMemo(
     () => (manager ? waiverTargets({ manager, status, projections, locked, phase }) : []),
     [manager, status, projections, locked, phase],
@@ -119,7 +120,9 @@ function WaiverView({ league, projections, manager, setClaim, game, transactions
           {targets.length ? (
             <ol className="targets">
               {targets.slice(0, SHOWN).map((t, i) => (
-                <Target key={t.in.id} rank={i + 1} t={t} short={short} phase={phase} rivals={rivals.get(t.in.id) ?? []} />
+                <Target key={t.in.id} rank={i + 1} t={t} short={short} phase={phase} rivals={rivals.get(t.in.id) ?? []}
+                  open={openTarget === t.in.id} onToggle={() => setOpenTarget(openTarget === t.in.id ? null : t.in.id)}
+                  manager={manager} projections={projections} />
               ))}
             </ol>
           ) : (
@@ -167,9 +170,11 @@ function PhaseBanner({ phase, event }: { phase: Phase; event: Projections["event
   );
 }
 
-function Target({ rank, t, short, phase, rivals }: {
+function Target({ rank, t, short, phase, rivals, open, onToggle, manager, projections }: {
   rank: number; t: WaiverTarget; short: Map<number, string>; phase: Phase; rivals: Rival[];
+  open: boolean; onToggle: () => void; manager: ManagerAnalysis; projections: Projections;
 }) {
+  const panel = `target-${t.in.id}`;
   const verb = phase === "free" ? "Sign" : "Claim";
   const order = phase !== "free";   // the Waiver order only matters until waivers are processed
   // Contested: a Manager ahead of you in the Waiver order would gain at least as much as you.
@@ -214,8 +219,12 @@ function Target({ rank, t, short, phase, rivals }: {
             <span className="muted">No rival would gain much from him.</span>
           )}
         </span>
+        <button type="button" className="link compare-toggle" aria-expanded={open} aria-controls={panel} onClick={onToggle}>
+          {open ? "Hide comparison" : `Compare with ${t.out.name}`}
+        </button>
       </div>
       <span className="gain">+{pts(t.gain)}</span>
+      {open && <TargetComparison id={panel} t={t} manager={manager} projections={projections} short={short} />}
     </li>
   );
 }
@@ -239,5 +248,30 @@ function WaiverOrder({ league, me }: { league: LeagueAnalysis; me: number | null
         ))}
       </ol>
     </section>
+  );
+}
+
+/** A Waiver target side by side with the Player you'd drop, and your Best XI
+ * for the next gameweek after the swap (docs/design.md §4). */
+function TargetComparison({ id, t, manager, projections, short }: {
+  id: string; t: WaiverTarget; manager: ManagerAnalysis; projections: Projections; short: Map<number, string>;
+}) {
+  const players = new Map(projections.players.map((p) => [p.id, p]));
+  const xi = bestXIAfterSwap(manager, t.out.id, t.in.id, projections)
+    .map((pid) => players.get(pid)!)
+    .sort((a, b) => a.position - b.position || b.projections[0] - a.projections[0]);
+  return (
+    <div className="target-compare" id={id}>
+      <CompareTable a={t.in} b={t.out} projections={projections}
+        sub={(p) => (p.id === t.in.id ? `${POS[p.position]} · ${short.get(p.team)} · in` : `${POS[p.position]} · ${short.get(p.team)} · out`)} />
+      <h3 className="label xi-title">Your GW{projections.gameweeks[0]} Best XI after the swap</h3>
+      <ul className="xi-chips" aria-label="Best XI after the swap">
+        {xi.map((p) => (
+          <li key={p.id} className={p.id === t.in.id ? "new" : undefined}>
+            {p.name}{p.id === t.in.id && <span className="sr-only"> (new)</span>}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

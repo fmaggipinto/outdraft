@@ -20,8 +20,6 @@ export const PlayerCompare = forwardRef<HTMLElement, {
   const teamOf = new Map(league.managers.map((m) => [m.entryId, m.teamName]));
   const ownerOf = new Map(status.element_status.map((e) => [e.element, e.owner]));
   const short = new Map(projections.teams.map((t) => [t.id, t.short_name]));
-  const opponents = opponentsIn(projections);
-  const gws = projections.gameweeks.slice(0, HORIZON);
   const owner = (id: number) => { const o = ownerOf.get(id); return o != null ? teamOf.get(o) ?? "Another Squad" : "Free agent"; };
 
   const sorted = [...projections.players].sort((a, b) => a.position - b.position || a.name.localeCompare(b.name));
@@ -40,8 +38,30 @@ export const PlayerCompare = forwardRef<HTMLElement, {
   );
 
   const [a, b] = ids.map((id) => (id != null ? players.get(id) : undefined)) as [ProjectedPlayer | undefined, ProjectedPlayer | undefined];
+
+  return (
+    <section className="card" aria-labelledby="cmp-h" ref={ref}>
+      <h2 id="cmp-h">Compare two Players</h2>
+      <div className="cmp-pickers">{picker(0)}{picker(1)}</div>
+      {a && b ? (
+        <CompareTable a={a} b={b} projections={projections} sub={(p) => owner(p.id)} />
+      ) : (
+        <p className="muted">Choose two Players, owned or not, to compare them.</p>
+      )}
+    </section>
+  );
+});
+
+/** Two Players side by side: Projection, form, minutes, starts, points, last 6
+ * scores, next Fixtures and news. The better value in each row is marked. */
+export function CompareTable({ a, b, projections, sub }: {
+  a: ProjectedPlayer; b: ProjectedPlayer; projections: Projections; sub: (p: ProjectedPlayer) => string;
+}) {
+  const opponents = opponentsIn(projections);
+  const gws = projections.gameweeks.slice(0, HORIZON);
   const rows: [string, (p: ProjectedPlayer) => number, (v: number) => string][] = [
     [`Projection ${gwRange(gws)}`, (p) => p.projections.slice(0, HORIZON).reduce((x, y) => x + y, 0), pts],
+    ["xG+xA /90", (p) => p.xg90 + p.xa90, (v) => v.toFixed(2)],
     ["xG /90", (p) => p.xg90, (v) => v.toFixed(2)],
     ["xA /90", (p) => p.xa90, (v) => v.toFixed(2)],
     ["Minutes", (p) => p.minutes, String],
@@ -50,46 +70,45 @@ export const PlayerCompare = forwardRef<HTMLElement, {
   ];
   const fixtures = (p: ProjectedPlayer) =>
     gws.map((gw) => opponents(p.team, gw).map((o) => (o.home ? o.team.toUpperCase() : o.team.toLowerCase())).join(" + ") || "–").join(" · ");
-
+  const better = <span className="sr-only"> (better)</span>;
   return (
-    <section className="card" aria-labelledby="cmp-h" ref={ref}>
-      <h2 id="cmp-h">Compare two Players</h2>
-      <div className="cmp-pickers">{picker(0)}{picker(1)}</div>
-      {a && b ? (
-        <table className="cmp">
-          <thead>
-            <tr>
-              <th scope="col" className="left">{a.name} <StatusTag p={a} /><span className="muted small block">{owner(a.id)}</span></th>
-              <th scope="col"><span className="sr-only">Stat</span></th>
-              <th scope="col" className="right">{b.name} <StatusTag p={b} /><span className="muted small block">{owner(b.id)}</span></th>
+    <table className="cmp">
+      <thead>
+        <tr>
+          <th scope="col" className="left">{a.name} <StatusTag p={a} /><span className="muted small block">{sub(a)}</span></th>
+          <th scope="col"><span className="sr-only">Stat</span></th>
+          <th scope="col" className="right">{b.name} <StatusTag p={b} /><span className="muted small block">{sub(b)}</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map(([label, get, show]) => {
+          const x = get(a), y = get(b);
+          return (
+            <tr key={label}>
+              <td className={`left${x > y ? " better" : ""}`}>{show(x)}{x > y && better}</td>
+              <th scope="row" className="muted small">{label}</th>
+              <td className={`right${y > x ? " better" : ""}`}>{show(y)}{y > x && better}</td>
             </tr>
-          </thead>
-          <tbody>
-            {rows.map(([label, get, show]) => {
-              const x = get(a), y = get(b);
-              return (
-                <tr key={label}>
-                  <td className={`left${x > y ? " better" : ""}`}>{show(x)}</td>
-                  <th scope="row" className="muted small">{label}</th>
-                  <td className={`right${y > x ? " better" : ""}`}>{show(y)}</td>
-                </tr>
-              );
-            })}
-            <tr>
-              <td className="left small">{a.points_recent.join(" ")}</td>
-              <th scope="row" className="muted small">Recent points</th>
-              <td className="right small">{b.points_recent.join(" ")}</td>
-            </tr>
-            <tr>
-              <td className="left small">{fixtures(a)}</td>
-              <th scope="row" className="muted small">Next fixtures</th>
-              <td className="right small">{fixtures(b)}</td>
-            </tr>
-          </tbody>
-        </table>
-      ) : (
-        <p className="muted">Choose two Players, owned or not, to compare them.</p>
-      )}
-    </section>
+          );
+        })}
+        <tr>
+          <td className="left small">{a.points_recent.join(" ")}</td>
+          <th scope="row" className="muted small">Last 6 scores</th>
+          <td className="right small">{b.points_recent.join(" ")}</td>
+        </tr>
+        <tr>
+          <td className="left small">{fixtures(a)}</td>
+          <th scope="row" className="muted small">Next fixtures</th>
+          <td className="right small">{fixtures(b)}</td>
+        </tr>
+        {(a.news || b.news) && (
+          <tr>
+            <td className="left small news">{a.news || "–"}</td>
+            <th scope="row" className="muted small">News</th>
+            <td className="right small news">{b.news || "–"}</td>
+          </tr>
+        )}
+      </tbody>
+    </table>
   );
-});
+}
