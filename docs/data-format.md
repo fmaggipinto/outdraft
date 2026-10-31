@@ -80,6 +80,22 @@ Score distributions for the same gameweeks as `projections.json`, used for Head-
   - a double gameweek combines two Fixtures, and a blank gameweek is always 0.
   - Players are treated as independent.
 
+## `results.json`
+
+Actual points per Player for every finished gameweek, from the FPL Draft API's live data. Season points by position and the Model check use it.
+
+```json
+{
+  "updated_at": "…",
+  "gameweeks": [1, 2, 3, 4, 5, 6, 7, 8],
+  "players": { "1": [2, 6, 1, 2, 9, 6, 2, 10] }
+}
+```
+
+- `players[id][i]` is the Player's points in `gameweeks[i]`, so the list sums to his `total_points` in `projections.json`.
+- Players who haven't scored a point all season are left out: their points are all 0.
+- It only changes when a gameweek finishes, or when FPL corrects points after the fact.
+
 ## `deadlines.ics`
 
 An iCalendar feed (RFC 5545, CRLF line endings) of every Waiver deadline and Gameweek deadline from a day ago to the end of the season. Each event lasts 15 minutes and has a 2-hour reminder.

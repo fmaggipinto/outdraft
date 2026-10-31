@@ -94,6 +94,14 @@ export interface LeagueDetails {
   matches?: Match[];
 }
 
+/** results.json: actual points per Player for each finished gameweek. */
+export interface Results {
+  updated_at: string;
+  gameweeks: number[];
+  /** Player id → points per gameweek, in `gameweeks` order. Missing = all 0. */
+  players: Record<string, number[]>;
+}
+
 /** distributions.json: per Player, one [points, probabilities] pair per gameweek. */
 export interface Distributions {
   updated_at: string;
