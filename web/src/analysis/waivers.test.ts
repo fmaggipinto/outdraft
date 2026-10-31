@@ -6,7 +6,7 @@ import gameJson from "../../tests/fixtures/game.json";
 import projectionsJson from "../../tests/fixtures/projections.json";
 import type { ElementStatus, Game, LeagueDetails, Projections, Transactions } from "../types";
 import { analyseLeague } from "./league";
-import { isProtected, lockedOnWaivers, waiverPhase, waiverTargets } from "./waivers";
+import { isProtected, lockedOnWaivers, rivalInterest, waiverPhase, waiverTargets } from "./waivers";
 
 const projections = projectionsJson as unknown as Projections;
 const status = classicStatus as ElementStatus;
@@ -111,4 +111,46 @@ it("never offers a locked Player as a Free agent signing, but lets it be claimed
   expect(signings.some((t) => t.in.id === open[0].in.id)).toBe(false);
   expect(signings.every((t) => !t.claimOnly)).toBe(true);
   expect(players.has(open[0].in.id)).toBe(true);
+});
+
+describe("rivalInterest", () => {
+  const me = league.managers[0];
+  const targets = waiverTargets({ manager: me, status, projections, locked: new Set(), phase: "waivers" }).slice(0, 8);
+  const interest = rivalInterest({ me, managers: league.managers, status, projections, playerIds: targets.map((t) => t.in.id) });
+
+  it("finds rivals for at least some targets", () => {
+    expect([...interest.values()].some((r) => r.length > 0)).toBe(true);
+  });
+
+  it("ranks rivals by their own gain, which matches the League analysis after their swap", () => {
+    for (const t of targets) {
+      const rivals = interest.get(t.in.id)!;
+      expect(rivals.map((r) => r.gain)).toEqual([...rivals.map((r) => r.gain)].sort((a, b) => b - a));
+      for (const r of rivals.slice(0, 2)) {
+        const swapped = {
+          element_status: status.element_status.map((e) =>
+            e.element === r.out.id ? { ...e, owner: null } : e.element === t.in.id ? { ...e, owner: r.manager.entryId } : e),
+        };
+        const after = analyseLeague(details, swapped, projections).managers.find((m) => m.entryId === r.manager.entryId)!;
+        expect(r.gain).toBeCloseTo(after.strength[3] - r.manager.strength[3], 6);
+      }
+    }
+  });
+
+  it("flags rivals ahead in the Waiver order, never lists the Claimed Manager or a rival with no real gain", () => {
+    for (const rivals of interest.values()) {
+      for (const r of rivals) {
+        expect(r.manager.entryId).not.toBe(me.entryId);
+        expect(r.ahead).toBe(r.manager.waiverPick < me.waiverPick);
+        expect(r.gain).toBeGreaterThanOrEqual(0.5);
+        expect(isProtected(r.out, projections.based_on_gameweek)).toBe(false);
+      }
+    }
+  });
+
+  it("lists nobody for a Player no one gains from", () => {
+    const useless = projections.players.find((p) => p.projections.every((x) => x === 0) && p.position === 4)!;
+    const none = rivalInterest({ me, managers: league.managers, status, projections, playerIds: [useless.id] });
+    expect(none.get(useless.id)).toEqual([]);
+  });
 });

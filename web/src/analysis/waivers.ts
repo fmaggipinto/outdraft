@@ -60,6 +60,41 @@ export function strengthOf(ids: number[], players: Map<number, ProjectedPlayer>,
   return squadStrength(xis, horizon);
 }
 
+interface SwapContext {
+  status: ElementStatus;
+  projections: Projections;
+  players: Map<number, ProjectedPlayer>;
+  rules: SquadRules;
+  horizon: number;
+}
+
+function swapContext(status: ElementStatus, projections: Projections): SwapContext {
+  return {
+    status,
+    projections,
+    players: new Map(projections.players.map((p) => [p.id, p])),
+    rules: projections.squad_rules ?? DRAFT_SQUAD_RULES,
+    horizon: Math.min(TARGET_HORIZON, projections.gameweeks.length),
+  };
+}
+
+/** The Manager's best swap of a non-protected same-position Player for
+ * `candidate`, if it raises Squad strength by at least MIN_GAIN. */
+function bestSwap(manager: ManagerAnalysis, candidate: ProjectedPlayer, ctx: SwapContext, current: number) {
+  const { players, projections, horizon, rules } = ctx;
+  let best: { out: ProjectedPlayer; gain: number } | null = null;
+  for (const id of manager.squad) {
+    const d = players.get(id);
+    if (!d || d.position !== candidate.position || isProtected(d, projections.based_on_gameweek)) continue;
+    const gain = strengthOf([...manager.squad.filter((x) => x !== d.id), candidate.id], players, projections, horizon, rules) - current;
+    if (gain > (best?.gain ?? 0)) best = { out: d, gain };
+  }
+  return best && best.gain >= MIN_GAIN ? best : null;
+}
+
+const currentStrength = (m: ManagerAnalysis, ctx: SwapContext) =>
+  strengthOf(m.squad, ctx.players, ctx.projections, ctx.horizon, ctx.rules);
+
 /** Free agents whose swap for one of the Manager's non-protected Players of the
  * same position raises Squad strength the most, best first. */
 export function waiverTargets(opts: {
@@ -70,32 +105,58 @@ export function waiverTargets(opts: {
   phase: Phase;
 }): WaiverTarget[] {
   const { manager, status, projections, locked, phase } = opts;
-  const rules = projections.squad_rules ?? DRAFT_SQUAD_RULES;
-  const players = new Map(projections.players.map((p) => [p.id, p]));
+  const ctx = swapContext(status, projections);
   const owned = new Set(status.element_status.filter((e) => e.owner != null).map((e) => e.element));
-  const horizon = Math.min(TARGET_HORIZON, projections.gameweeks.length);
-  const value = (p: ProjectedPlayer) => p.projections.slice(0, horizon).reduce((a, b) => a + b, 0);
+  const value = (p: ProjectedPlayer) => p.projections.slice(0, ctx.horizon).reduce((a, b) => a + b, 0);
   const minMinutes = Math.max(MIN_MINUTES_FLOOR, MIN_SHARE * 90 * Math.max(projections.based_on_gameweek, 1));
 
   const free = projections.players.filter((p) =>
     !owned.has(p.id) && !manager.squad.includes(p.id) && p.minutes >= minMinutes
     && !(phase === "free" && locked.has(p.id)));
 
-  const current = strengthOf(manager.squad, players, projections, horizon, rules);
+  const current = currentStrength(manager, ctx);
   const targets: WaiverTarget[] = [];
   for (const pos of [1, 2, 3, 4] as const) {
     const candidates = free.filter((p) => p.position === pos).sort((a, b) => value(b) - value(a) || a.id - b.id).slice(0, CANDIDATES);
-    const drops = manager.squad
-      .map((id) => players.get(id))
-      .filter((p): p is ProjectedPlayer => !!p && p.position === pos && !isProtected(p, projections.based_on_gameweek));
     for (const c of candidates) {
-      let best: { out: ProjectedPlayer; gain: number } | null = null;
-      for (const d of drops) {
-        const gain = strengthOf([...manager.squad.filter((id) => id !== d.id), c.id], players, projections, horizon, rules) - current;
-        if (gain > (best?.gain ?? 0)) best = { out: d, gain };
-      }
-      if (best && best.gain >= MIN_GAIN) targets.push({ in: c, out: best.out, gain: best.gain, claimOnly: locked.has(c.id) });
+      const best = bestSwap(manager, c, ctx, current);
+      if (best) targets.push({ in: c, out: best.out, gain: best.gain, claimOnly: locked.has(c.id) });
     }
   }
   return targets.sort((a, b) => b.gain - a.gain || a.in.id - b.in.id);
+}
+
+export interface Rival {
+  manager: ManagerAnalysis;
+  /** That Manager's own best Squad strength gain from the Player. */
+  gain: number;
+  out: ProjectedPlayer;
+  /** Earlier than the Claimed Manager in the Waiver order. */
+  ahead: boolean;
+}
+
+/** Rival interest: the other Managers who would gain most from each Player,
+ * best first. It estimates who should want a Player, not who will claim him. */
+export function rivalInterest(opts: {
+  me: ManagerAnalysis;
+  managers: ManagerAnalysis[];
+  status: ElementStatus;
+  projections: Projections;
+  playerIds: number[];
+}): Map<number, Rival[]> {
+  const { me, managers, status, projections, playerIds } = opts;
+  const ctx = swapContext(status, projections);
+  const rivals = managers.filter((m) => m.entryId !== me.entryId);
+  const current = new Map(rivals.map((m) => [m.entryId, currentStrength(m, ctx)]));
+  const out = new Map<number, Rival[]>();
+  for (const id of playerIds) {
+    const player = ctx.players.get(id);
+    if (!player) continue;
+    const list = rivals.flatMap((m): Rival[] => {
+      const best = bestSwap(m, player, ctx, current.get(m.entryId)!);
+      return best ? [{ manager: m, gain: best.gain, out: best.out, ahead: m.waiverPick < me.waiverPick }] : [];
+    });
+    out.set(id, list.sort((a, b) => b.gain - a.gain || a.manager.waiverPick - b.manager.waiverPick));
+  }
+  return out;
 }

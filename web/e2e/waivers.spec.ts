@@ -22,6 +22,7 @@ test("shows Waiver targets and the Waiver order for the Claimed Manager", async 
   const items = targets.getByRole("listitem");
   await expect(items.first()).toContainText("Claim");
   await expect(items.first().locator(".gain")).toHaveText(/^\+\d+\.\d$/);
+  await expect(items.first().locator(".rivals")).toContainText(/Rival interest: .+ \+\d+\.\d \((ahead of|behind) you\)|No rival would gain much/);
 
   const order = page.getByRole("region", { name: "Waiver order" });
   await expect(order.getByRole("listitem")).toHaveCount(8);
@@ -42,6 +43,9 @@ test("switches to Free agent signings once waivers are processed", async ({ page
   const targets = page.getByRole("region", { name: "Free agent targets" });
   await expect(targets.getByRole("listitem").first()).toContainText("Sign");
   await expect(targets).not.toContainText("On waivers");
+  // The Waiver order no longer matters, so no ahead/behind flags or Contested tags.
+  await expect(targets.locator(".targets")).not.toContainText("ahead of you");
+  await expect(targets.locator(".targets")).not.toContainText("Contested");
 });
 
 test("says when waivers are being processed", async ({ page }) => {

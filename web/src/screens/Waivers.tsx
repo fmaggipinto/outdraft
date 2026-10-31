@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { LeagueAnalysis, ManagerAnalysis } from "../analysis/league";
 import {
-  lockedOnWaivers, TARGET_HORIZON, waiverPhase, waiverTargets, type Phase, type WaiverTarget,
+  lockedOnWaivers, rivalInterest, TARGET_HORIZON, waiverPhase, waiverTargets, type Phase, type Rival, type WaiverTarget,
 } from "../analysis/waivers";
 import { useClaim } from "../claim";
 import { ClaimCard, YouTag } from "../components/ClaimCard";
@@ -85,6 +85,12 @@ function WaiverView({ league, projections, manager, setClaim, game, transactions
     () => (manager ? waiverTargets({ manager, status, projections, locked, phase }) : []),
     [manager, status, projections, locked, phase],
   );
+  const rivals = useMemo(
+    () => (manager
+      ? rivalInterest({ me: manager, managers: league.managers, status, projections, playerIds: targets.slice(0, SHOWN).map((t) => t.in.id) })
+      : new Map<number, Rival[]>()),
+    [manager, league, status, projections, targets],
+  );
   const event = projections.events.find((e) => e.gameweek === nextGw) ?? projections.events[0];
   const short = new Map(projections.teams.map((t) => [t.id, t.short_name]));
   const gws = gwRange(projections.gameweeks.slice(0, TARGET_HORIZON));
@@ -107,12 +113,17 @@ function WaiverView({ league, projections, manager, setClaim, game, transactions
           {targets.length ? (
             <ol className="targets">
               {targets.slice(0, SHOWN).map((t, i) => (
-                <Target key={t.in.id} rank={i + 1} t={t} short={short} phase={phase} />
+                <Target key={t.in.id} rank={i + 1} t={t} short={short} phase={phase} rivals={rivals.get(t.in.id) ?? []} />
               ))}
             </ol>
           ) : (
             <p>No clear upgrades right now: no Free agent raises your Squad strength by at least 0.5.</p>
           )}
+          <p className="muted small">
+            Rival interest shows which other Managers would gain most from each Player, and whether they're ahead
+            of you in the Waiver order. "Contested" means a Manager ahead of you would gain at least as much. It
+            estimates who should want a Player, not who will claim him.
+          </p>
           <p className="muted small">
             Players averaging 4.5+ points or drafted in the top 40 are never suggested as drops. Check the news before
             dropping anyone.{!transactionsKnown && " Recent drops couldn't be loaded, so a just-dropped Player may show as free."}
@@ -148,8 +159,13 @@ function PhaseBanner({ phase, event }: { phase: Phase; event: Projections["event
   );
 }
 
-function Target({ rank, t, short, phase }: { rank: number; t: WaiverTarget; short: Map<number, string>; phase: Phase }) {
+function Target({ rank, t, short, phase, rivals }: {
+  rank: number; t: WaiverTarget; short: Map<number, string>; phase: Phase; rivals: Rival[];
+}) {
   const verb = phase === "free" ? "Sign" : "Claim";
+  const order = phase !== "free";   // the Waiver order only matters until waivers are processed
+  // Contested: a Manager ahead of you in the Waiver order would gain at least as much as you.
+  const contested = order && rivals.some((r) => r.ahead && r.gain >= t.gain);
   return (
     <li>
       <span className="pos">{rank}</span>
@@ -159,6 +175,7 @@ function Target({ rank, t, short, phase }: { rank: number; t: WaiverTarget; shor
           <span className="team">{t.in.name}</span>{" "}
           <span className="muted small">{POS[t.in.position]} · {short.get(t.in.team)}</span>
           {t.claimOnly && phase !== "free" && <span className="tag warn">On waivers</span>}
+          {contested && <span className="tag bad">Contested</span>}
           <StatusTag p={t.in} />
         </span>
         <span>
@@ -170,6 +187,24 @@ function Target({ rank, t, short, phase }: { rank: number; t: WaiverTarget; shor
           {t.in.projections.slice(0, TARGET_HORIZON).map(pts).join(" · ")}
           {" vs "}
           {t.out.projections.slice(0, TARGET_HORIZON).map(pts).join(" · ")}
+        </span>
+        <span className="rivals small">
+          {rivals.length ? (
+            <>
+              <span className="muted">Rival interest: </span>
+              {rivals.slice(0, 3).map((r, i) => (
+                <span key={r.manager.entryId}>
+                  {i > 0 && <span className="muted"> · </span>}
+                  <span className={order && r.ahead ? "ahead" : undefined}>
+                    {r.manager.teamName} +{pts(r.gain)}{order && (r.ahead ? " (ahead of you)" : " (behind you)")}
+                  </span>
+                </span>
+              ))}
+              {rivals.length > 3 && <span className="muted"> and {rivals.length - 3} more</span>}
+            </>
+          ) : (
+            <span className="muted">No rival would gain much from him.</span>
+          )}
         </span>
       </div>
       <span className="gain">+{pts(t.gain)}</span>

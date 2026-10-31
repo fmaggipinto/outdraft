@@ -201,3 +201,7 @@ tr.me td:first-child { box-shadow: inset 3px 0 0 var(--acc); }
   h1 { font-size: 21px; }
   .open-form .row { flex-direction: column; }
 }
+
+/* Rival interest */
+.targets .rivals { margin-top: 3px; line-height: 1.35; }
+.targets .rivals .ahead { color: var(--err); font-weight: 600; }
