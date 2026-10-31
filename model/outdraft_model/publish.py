@@ -9,6 +9,7 @@ from datetime import timedelta
 from pathlib import Path
 
 from . import distribution
+from .deadlines import deadlines_ics
 from . import model as xg
 from .api import load_season, parse_time
 
@@ -45,6 +46,16 @@ def write_if_changed(path, data):
         json.dump(data, fh, separators=(",", ":"), ensure_ascii=False)
         fh.write("\n")
     tmp.replace(path)
+    return True
+
+
+def write_text_if_changed(path, text):
+    """Like write_if_changed, for text files written exactly as given."""
+    path = Path(path)
+    if path.exists() and path.read_bytes() == text.encode("utf-8"):
+        return False
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(text.encode("utf-8"))
     return True
 
 
@@ -184,6 +195,9 @@ def run(api, out_dir, now):
         }
         if write_snapshot(snap_dir, snapshot, now):
             summary["written"].append(snapshot_path(snap_dir, nxt).relative_to(out).as_posix())
+
+    if write_text_if_changed(out / "deadlines.ics", deadlines_ics(season.events, now)):
+        summary["written"].append("deadlines.ics")
 
     have, gaps = snapshot_status(season, snap_dir, now)
     manifest = {

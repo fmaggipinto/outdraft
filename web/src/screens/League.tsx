@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "../App";
 import { useClaim } from "../claim";
+import { CalendarLinks } from "../components/CalendarLinks";
 import { ClaimCard, YouTag } from "../components/ClaimCard";
 import { LeagueTabs } from "../components/LeagueTabs";
 import type { Horizon, LeagueAnalysis, ManagerAnalysis } from "../analysis/league";
@@ -81,6 +82,7 @@ function LeagueHeader({ league, projections }: { league: LeagueAnalysis; project
           </div>
         </dl>
       )}
+      <CalendarLinks />
     </section>
   );
 }

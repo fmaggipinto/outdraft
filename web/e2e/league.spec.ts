@@ -102,3 +102,11 @@ test("rejects a League ID that isn't a number", async ({ page }) => {
   await page.getByRole("button", { name: "Open League" }).click();
   await expect(page.getByText("A League ID is a number")).toBeVisible();
 });
+
+test("offers the deadlines calendar for Apple, Outlook and Google", async ({ page }) => {
+  await page.goto("/league/5000");
+  const host = new URL(page.url()).host;
+  await expect(page.getByRole("link", { name: "Apple or Outlook Calendar" })).toHaveAttribute("href", `webcal://${host}/deadlines.ics`);
+  await expect(page.getByRole("link", { name: "Google Calendar" })).toHaveAttribute(
+    "href", `https://calendar.google.com/calendar/render?cid=${encodeURIComponent(`webcal://${host}/deadlines.ics`)}`);
+});
