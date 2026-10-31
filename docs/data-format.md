@@ -40,7 +40,7 @@ The latest Projections for the next (up to) 6 gameweeks.
   "players": [{
     "id": 1, "name": "Raya", "first_name": "David", "second_name": "Raya Martín",
     "team": 1, "position": 1, "status": "a", "chance_next": null, "news": "", "draft_rank": 40,
-    "minutes": 720, "total_points": 38, "starts_recent": 6, "points_recent": [2, 6, 1, 2, 9, 6],
+    "minutes": 720, "total_points": 38, "points_avg_capped": 4.25, "starts_recent": 6, "points_recent": [2, 6, 1, 2, 9, 6],
     "xg90": 0.0, "xa90": 0.012,
     "projections": [5.3, 4.6, 4.0, 3.9, 4.8, 4.2]
   }]
@@ -50,6 +50,7 @@ The latest Projections for the next (up to) 6 gameweeks.
 - `based_on_gameweek`: the last finished gameweek whose data the Model used.
 - `squad_rules`: the Draft lineup rules, keyed by position. A Best XI fields `play` Players, with between `min_play` and `max_play` from each position.
 - `position`: 1 GKP, 2 DEF, 3 MID, 4 FWD.
+- `points_avg_capped`: points per finished gameweek with any single score capped at 10, so one haul doesn't dominate. Waiver targets use it to protect a Manager's consistent scorers from drop suggestions.
 - `status`: `a` available, `d` doubtful, `i` injured, `s` suspended, `u`/`n` unavailable.
 - `projections[i]` is the Projection for `gameweeks[i]`. It sums over all the Player's Fixtures that gameweek (a double gameweek counts twice, a blank gameweek is 0), and has injury status applied: 0 if unavailable, scaled by `chance_next` if doubtful.
 - `fixtures` lists every Fixture in `gameweeks`. A club with two entries in a gameweek has a double, and a club with none has a blank.

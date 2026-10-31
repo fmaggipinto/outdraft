@@ -9,6 +9,8 @@ export interface ManagerAnalysis {
   leagueEntryId: number;
   teamName: string;
   managerName: string;
+  /** Position in the Waiver order: 1 = first claim. */
+  waiverPick: number;
   squad: number[];
   /** Best XI for each published gameweek, in Projections order. */
   bestXIs: BestXI[];
@@ -77,6 +79,7 @@ export function analyseLeague(
       leagueEntryId: e.id,
       teamName: e.entry_name,
       managerName: `${e.player_first_name} ${e.player_last_name}`.trim(),
+      waiverPick: e.waiver_pick,
       squad,
       bestXIs,
       strength: { 1: squadStrength(bestXIs, 1), 3: squadStrength(bestXIs, 3), 6: squadStrength(bestXIs, 6) },

@@ -1,17 +1,5 @@
-import { expect, test, type Page } from "@playwright/test";
-import { readFileSync } from "node:fs";
-
-const fixture = (name: string) => readFileSync(new URL(`../tests/fixtures/${name}`, import.meta.url), "utf8");
-
-async function serveRecorded(page: Page) {
-  const leagues: Record<string, string> = { "5000": "classic", "130000": "h2h" };
-  await page.route("**/data/projections.json", (r) => r.fulfill({ body: fixture("projections.json"), contentType: "application/json" }));
-  await page.route("**/api/fpl/league/*/*", (r) => {
-    const [, id, kind] = new URL(r.request().url()).pathname.match(/league\/(\d+)\/(details|element-status)/) ?? [];
-    if (!leagues[id]) return r.fulfill({ status: 404, body: '{"error":"not found"}' });
-    return r.fulfill({ body: fixture(`${leagues[id]}-${kind}.json`), contentType: "application/json" });
-  });
-}
+import { expect, test } from "@playwright/test";
+import { serveRecorded } from "./recorded";
 
 test.beforeEach(({ page }) => serveRecorded(page));
 

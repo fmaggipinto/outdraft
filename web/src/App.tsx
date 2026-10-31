@@ -2,6 +2,7 @@ import { Component, useEffect, useState, type ReactNode } from "react";
 import { Home } from "./screens/Home";
 import { League } from "./screens/League";
 import { Squad } from "./screens/Squad";
+import { Waivers } from "./screens/Waivers";
 
 export function navigate(path: string) {
   history.pushState(null, "", path);
@@ -57,6 +58,7 @@ function usePath() {
 export function App() {
   const path = usePath();
   const league = path.match(/^\/league\/(\d{1,9})\/?$/);
+  const waivers = path.match(/^\/league\/(\d{1,9})\/waivers\/?$/);
   const squad = path.match(/^\/league\/(\d{1,9})\/manager\/(\d{1,9})\/?$/);
   return (
     <>
@@ -68,6 +70,7 @@ export function App() {
       <main>
         <Crashed key={path}>
           {squad ? <Squad leagueId={Number(squad[1])} entryId={Number(squad[2])} />
+            : waivers ? <Waivers id={Number(waivers[1])} />
             : league ? <League id={Number(league[1])} />
             : <Home />}
         </Crashed>
