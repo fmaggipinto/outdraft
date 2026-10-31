@@ -37,7 +37,7 @@ export function ClaimCard({ league, me, setClaim }: {
         ))}
       </select>
       <p className="muted small">
-        Highlights you everywhere and powers your Waiver targets. Remembered on this device only.
+        Highlights you everywhere and powers your Waiver targets and Trades. Remembered on this device only.
       </p>
     </section>
   );
