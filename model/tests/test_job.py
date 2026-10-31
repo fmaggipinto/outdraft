@@ -95,3 +95,18 @@ def test_extra_runs_only_happen_within_6_hours_of_a_deadline(api):
     assert near_deadline(api, GW10_DEADLINE - timedelta(minutes=8))
     assert not near_deadline(api, GW10_DEADLINE - timedelta(hours=6, minutes=8))
     assert not near_deadline(api, GW10_DEADLINE + timedelta(minutes=7))
+
+
+def test_fixtures_carry_ease_for_attackers_and_defenders(published, season):
+    from outdraft_model.model import XgModel
+    model = XgModel(season, season.last_finished)
+    fixtures = read(published / "projections.json")["fixtures"]
+    for f in fixtures:
+        for k in ("home_attack", "home_defence", "away_attack", "away_defence"):
+            assert 0.2 < f[k] < 5
+        assert f["home_attack"] == round(model.factors(f["away"], True, 1.0)[0], 3)
+        assert f["away_defence"] == round(model.factors(f["home"], False, 1.0)[1], 3)
+    # Home advantage: on average a Fixture is easier at home.
+    home = sum(f["home_attack"] for f in fixtures) / len(fixtures)
+    away = sum(f["away_attack"] for f in fixtures) / len(fixtures)
+    assert home > away

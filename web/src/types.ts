@@ -40,7 +40,17 @@ export interface Projections {
   events: { gameweek: number; deadline: string; waivers_deadline: string | null }[];
   teams: { id: number; name: string; short_name: string }[];
   squad_rules?: SquadRules;
-  fixtures: { gameweek: number; home: number; away: number; kickoff: string | null }[];
+  fixtures: {
+    gameweek: number;
+    home: number;
+    away: number;
+    kickoff: string | null;
+    /** How easy the Fixture is for each side, 1.0 = average (missing from older files). */
+    home_attack?: number;
+    home_defence?: number;
+    away_attack?: number;
+    away_defence?: number;
+  }[];
   players: ProjectedPlayer[];
 }
 

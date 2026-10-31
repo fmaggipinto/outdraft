@@ -103,6 +103,20 @@ def choose_params(model, last, previous):
             "backtest_gws": [xg.BACKTEST_START, last], "tuned_at": last}, True
 
 
+TICKER_K = 1.0   # opponent effect for the fixture ticker, as in fpl_draft.py's dashboard
+
+
+def fixture_ease(model, home, away):
+    """How easy a Fixture is for each side, 1.0 = average: for attackers (the
+    opponent's defence) and for defenders (the opponent's attack), with home
+    advantage. Uses a fixed opponent effect so the ticker reads the same
+    whatever the tuned Model weights are."""
+    h_att, h_def = model.factors(away, True, TICKER_K)
+    a_att, a_def = model.factors(home, False, TICKER_K)
+    return {"home_attack": round(h_att, 3), "home_defence": round(h_def, 3),
+            "away_attack": round(a_att, 3), "away_defence": round(a_def, 3)}
+
+
 def squad_rules(rules):
     """Draft lineup rules the browser needs to pick a Best XI."""
     names = {1: "GKP", 2: "DEF", 3: "MID", 4: "FWD"}
@@ -165,8 +179,8 @@ def run(api, out_dir, now):
     if nxt is not None:
         gws = [gw for gw in range(nxt, nxt + HORIZON) if season.event(gw)]
         proj = model.projections(gws, params)
-        fixtures = [{"gameweek": gw, "home": f["team_h"], "away": f["team_a"],
-                     "kickoff": f["kickoff_time"]}
+        fixtures = [{"gameweek": gw, "home": f["team_h"], "away": f["team_a"], "kickoff": f["kickoff_time"],
+                     **fixture_ease(model, f["team_h"], f["team_a"])}
                     for gw in gws for f in sorted(season.fixtures.get(gw, []), key=lambda f: f["id"])]
         projections = {
             "updated_at": stamp, "model_version": xg.VERSION, "params": params,
