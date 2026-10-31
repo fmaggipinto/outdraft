@@ -316,3 +316,21 @@ body:has(.tabbar) footer { padding-bottom: 88px; }
   .band h1 { font-size: 34px; }
   .open-form .row { flex-direction: column; }
 }
+
+/* League › Season */
+.season-title { font-family: "Anton", Impact, sans-serif; font-weight: 400; font-size: 28px; text-transform: uppercase; letter-spacing: 0.01em; margin: 30px 0 0; border-top: 6px solid var(--ink); padding-top: 10px; }
+.sort-by { margin: 4px 0 10px; flex-wrap: wrap; }
+.bypos { list-style: none; margin: 0; padding: 0; }
+.bypos li { padding: 8px 0; border-top: 1px solid var(--rule); }
+.bypos li:first-child { border-top: 0; }
+.bypos li.me { background: var(--highlight); margin: 0 -16px; padding: 8px 16px; }
+.bypos-head { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.bypos .team { font-weight: 700; }
+.bypos .figure { font-family: "Anton", Impact, sans-serif; font-size: 16px; }
+.stack { display: flex; height: 20px; margin: 4px 0; background: var(--rule); }
+.stack .seg { display: block; height: 100%; }
+.stack .seg.dim { opacity: 0.35; }
+.top3 { margin: 2px 0 0; }
+.left-squad { color: var(--muted); font-style: italic; }
+.bypos .values { display: flex; flex-wrap: wrap; gap: 2px 12px; margin: 0; }
+.bypos .values .dot { display: inline-block; width: 9px; height: 9px; margin-right: 4px; vertical-align: 0; }

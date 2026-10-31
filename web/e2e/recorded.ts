@@ -1,5 +1,5 @@
 import type { Page } from "@playwright/test";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
 export const fixture = (name: string) => readFileSync(new URL(`../tests/fixtures/${name}`, import.meta.url), "utf8");
 
@@ -9,6 +9,14 @@ export async function serveRecorded(page: Page, game: Record<string, unknown> = 
   const leagues: Record<string, string> = { "5000": "classic", "130000": "h2h" };
   const json = { contentType: "application/json" };
   await page.route("**/data/projections.json", (r) => r.fulfill({ body: fixture("projections.json"), ...json }));
+  await page.route("**/data/results.json", (r) => r.fulfill({ body: fixture("results.json"), ...json }));
+  await page.route("**/api/fpl/entry/*/event/*", (r) => {
+    const [, entry, gw] = new URL(r.request().url()).pathname.match(/entry\/(\d+)\/event\/(\d+)/)!;
+    const file = new URL(`../tests/fixtures/picks/${entry}-${gw}.json`, import.meta.url);
+    return existsSync(file)
+      ? r.fulfill({ body: readFileSync(file, "utf8"), ...json })
+      : r.fulfill({ status: 404, body: "{}" });
+  });
   await page.route("**/data/distributions.json", (r) => r.fulfill({ body: fixture("distributions.json"), ...json }));
   await page.route("**/api/fpl/game", (r) =>
     r.fulfill({ body: JSON.stringify({ ...JSON.parse(fixture("game.json")), ...game }), ...json }));

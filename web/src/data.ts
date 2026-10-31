@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { EntryPublic } from "./findLeague";
 import { CACHE_NAME, loadJson, NotFoundError } from "./offlineCache";
-import type { Distributions, ElementStatus, Game, LeagueDetails, Projections, Results, Transactions } from "./types";
+import type { Distributions, ElementStatus, Game, LeagueDetails, Picks, Projections, Results, Transactions } from "./types";
 
 export { NotFoundError };
 
@@ -67,6 +67,13 @@ export const fetchGame = () => getJson<Game>("/api/fpl/game");
 
 export const fetchTransactions = (id: number) =>
   getJson<Transactions>(`/api/fpl/draft/league/${id}/transactions`);
+
+/** A Manager's lineup for a finished gameweek, or null if they had none (joined later). */
+export const fetchPicks = (entryId: number, gw: number) =>
+  getJson<Picks>(`/api/fpl/entry/${entryId}/event/${gw}`).catch((e) => {
+    if (e instanceof NotFoundError) return null;
+    throw e;
+  });
 
 export const fetchEntryPublic = (entryId: number) =>
   getJson<EntryPublic>(`/api/fpl/entry/${entryId}/public`);

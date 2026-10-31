@@ -5,6 +5,7 @@ import { useClaim } from "../claim";
 import { ClaimCard, YouTag } from "../components/ClaimCard";
 import { MatchupsSection } from "../components/MatchupsSection";
 import { Screen } from "../components/Screen";
+import { SeasonByPosition } from "../components/SeasonByPosition";
 import { ordinal, pts, relative, when } from "../format";
 import { gwRange, HorizonToggle, useHorizon } from "../horizon";
 import type { Projections } from "../types";
@@ -38,6 +39,8 @@ export function League({ id }: { id: number }) {
           <LeagueTable league={league} horizon={horizon} me={me} />
           {league.format === "h2h" && <MatchupsSection league={league} me={me} />}
           <SquadStrength league={league} horizon={horizon} setHorizon={setHorizon} me={me} />
+          <h2 className="season-title">Season</h2>
+          <SeasonByPosition league={league} projections={projections} status={state.status} me={me} />
         </>
       ) : (
         <div className="card" role="status">
