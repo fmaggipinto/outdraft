@@ -263,3 +263,13 @@ table.cmp tbody th { text-align: center; font-weight: 400; width: 30%; }
 table.cmp .right { text-align: right; }
 table.cmp td.better { color: var(--acc); font-weight: 700; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Home: your Leagues, team ID lookup */
+.recent { list-style: none; margin: 8px 0; padding: 0; }
+.recent li { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); }
+.recent li:first-child { border-top: 0; }
+.recent a, .recent .link:not(.muted) { font-weight: 600; text-decoration: none; text-align: left; }
+.recent .link.muted { color: var(--mute); font-size: 13px; }
+.home .card + .card { margin-top: 0; }
+.choose { margin-top: 10px; border-top: 1px solid var(--line); padding-top: 8px; }
+button:disabled { opacity: 0.6; cursor: default; }
