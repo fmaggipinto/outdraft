@@ -1,10 +1,47 @@
-import { useEffect, useState } from "react";
+import { Component, useEffect, useState, type ReactNode } from "react";
 import { Home } from "./screens/Home";
 import { League } from "./screens/League";
+import { Squad } from "./screens/Squad";
 
 export function navigate(path: string) {
   history.pushState(null, "", path);
   dispatchEvent(new PopStateEvent("popstate"));
+  scrollTo(0, 0);
+}
+
+/** An in-app link: a real <a> (so it can be opened in a new tab or shared),
+ * navigated without a page load. */
+export function Link({ to, children, ...rest }: { to: string } & React.AnchorHTMLAttributes<HTMLAnchorElement>) {
+  return (
+    <a
+      href={to}
+      {...rest}
+      onClick={(e) => {
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+        e.preventDefault();
+        navigate(to);
+      }}
+    >
+      {children}
+    </a>
+  );
+}
+
+/** Shows a message instead of a blank page if a screen crashes. */
+class Crashed extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  render() {
+    if (!this.state.failed) return this.props.children;
+    return (
+      <div className="card status" role="alert">
+        <p>Something went wrong showing this page.</p>
+        <button onClick={() => location.reload()}>Reload</button>
+      </div>
+    );
+  }
 }
 
 function usePath() {
@@ -20,6 +57,7 @@ function usePath() {
 export function App() {
   const path = usePath();
   const league = path.match(/^\/league\/(\d{1,9})\/?$/);
+  const squad = path.match(/^\/league\/(\d{1,9})\/manager\/(\d{1,9})\/?$/);
   return (
     <>
       <header className="top">
@@ -27,7 +65,13 @@ export function App() {
           Outdraft
         </a>
       </header>
-      <main>{league ? <League key={league[1]} id={Number(league[1])} /> : <Home />}</main>
+      <main>
+        <Crashed key={path}>
+          {squad ? <Squad leagueId={Number(squad[1])} entryId={Number(squad[2])} />
+            : league ? <League id={Number(league[1])} />
+            : <Home />}
+        </Crashed>
+      </main>
       <footer>
         Outdraft is not affiliated with the Premier League or Fantasy Premier League.
         Data from the public FPL Draft API.

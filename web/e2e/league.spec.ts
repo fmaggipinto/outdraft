@@ -34,6 +34,33 @@ test("opens a League from Home and shows Squad strength and the table", async ({
   expect(overflow).toBeLessThanOrEqual(0);
 });
 
+test("opens a Manager's Squad from the League screen and goes back", async ({ page }) => {
+  await page.goto("/league/5000?h=6");
+  const first = page.getByRole("region", { name: "Squad strength" }).getByRole("link").first();
+  const team = (await first.locator(".team").textContent())!;
+  const strength = (await first.locator(".value").textContent())!;
+  await first.click();
+
+  await expect(page).toHaveURL(/\/league\/5000\/manager\/\d+\?h=6$/);
+  await expect(page.getByRole("heading", { name: team, level: 1 })).toBeVisible();
+  await expect(page.getByRole("region", { name: /Squad strength/ })).toContainText(strength);
+  const squad = page.getByRole("region", { name: "Squad" });
+  await expect(squad.locator("tbody tr:not(.pos-row)")).toHaveCount(15);
+  await expect(squad.getByRole("rowheader", { name: "Goalkeepers" })).toBeVisible();
+  await expect(squad.getByRole("columnheader", { name: "GW15" })).toBeVisible();
+
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+  expect(overflow).toBeLessThanOrEqual(0);
+
+  await page.getByRole("link", { name: "← Test Classic League" }).click();
+  await expect(page).toHaveURL(/\/league\/5000\?h=6$/);
+});
+
+test("explains a Manager who isn't in the League", async ({ page }) => {
+  await page.goto("/league/5000/manager/1");
+  await expect(page.getByRole("alert")).toContainText("isn't in this League");
+});
+
 test("shows Head-to-head table columns for a Head-to-head League", async ({ page }) => {
   await page.goto("/league/130000");
   await expect(page.getByText(/Head-to-head · 8 Managers/)).toBeVisible();

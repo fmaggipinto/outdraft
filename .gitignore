@@ -10,3 +10,4 @@ __pycache__/
 Thumbs.db
 test-results/
 playwright-report/
+.vite/

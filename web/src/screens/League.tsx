@@ -1,56 +1,23 @@
 import { useEffect, useMemo, useState } from "react";
-import { navigate } from "../App";
-import { analyseLeague, HORIZONS, type Horizon, type LeagueAnalysis } from "../analysis/league";
-import { fetchLeague, fetchProjections, NotFoundError } from "../data";
-import { pts, relative, when } from "../format";
+import { Link } from "../App";
+import type { Horizon, LeagueAnalysis, ManagerAnalysis } from "../analysis/league";
+import { ordinal, pts, relative, when } from "../format";
+import { gwRange, HorizonToggle, useHorizon } from "../horizon";
 import type { Projections } from "../types";
+import { LeagueStatus, useLeague } from "../useLeague";
 
-type State =
-  | { kind: "loading" }
-  | { kind: "error"; message: string; retry: boolean }
-  | { kind: "ready"; league: LeagueAnalysis; projections: Projections };
-
-const HORIZON_LABEL: Record<Horizon, string> = { 1: "Next GW", 3: "Next 3", 6: "Next 6" };
+export const squadPath = (league: LeagueAnalysis, m: ManagerAnalysis, h: Horizon) =>
+  `/league/${league.id}/manager/${m.entryId}?h=${h}`;
 
 export function League({ id }: { id: number }) {
-  const [state, setState] = useState<State>({ kind: "loading" });
-  const [attempt, setAttempt] = useState(0);
-
-  useEffect(() => {
-    let live = true;
-    setState({ kind: "loading" });
-    Promise.all([fetchLeague(id), fetchProjections()])
-      .then(([[details, status], projections]) => {
-        if (live) setState({ kind: "ready", league: analyseLeague(details, status, projections), projections });
-      })
-      .catch((e) => {
-        if (!live) return;
-        const unknown = e instanceof NotFoundError && String(e.message).includes("/league/");
-        setState({
-          kind: "error",
-          retry: !unknown,
-          message: unknown
-            ? `There's no FPL Draft League with ID ${id}. Check the number in your League's address.`
-            : "Couldn't load this League right now. FPL Draft may be busy (it often is around deadlines).",
-        });
-      });
-    return () => { live = false; };
-  }, [id, attempt]);
+  const [state, retry] = useLeague(id);
+  const [horizon, setHorizon] = useHorizon();
 
   useEffect(() => {
     if (state.kind === "ready") document.title = `${state.league.name} · Outdraft`;
   }, [state]);
 
-  if (state.kind === "loading") return <p className="status" role="status">Loading League {id}…</p>;
-  if (state.kind === "error")
-    return (
-      <div className="card status" role="alert">
-        <p>{state.message}</p>
-        {state.retry
-          ? <button onClick={() => setAttempt((n) => n + 1)}>Try again</button>
-          : <button onClick={() => navigate("/")}>Enter another League ID</button>}
-      </div>
-    );
+  if (state.kind !== "ready") return <LeagueStatus id={id} state={state} retry={retry} />;
 
   const { league, projections } = state;
   return (
@@ -58,8 +25,8 @@ export function League({ id }: { id: number }) {
       <LeagueHeader league={league} projections={projections} />
       {league.drafted ? (
         <>
-          <SquadStrength league={league} />
-          <LeagueTable league={league} />
+          <SquadStrength league={league} horizon={horizon} setHorizon={setHorizon} />
+          <LeagueTable league={league} horizon={horizon} />
         </>
       ) : (
         <div className="card" role="status">
@@ -110,39 +77,24 @@ function LeagueHeader({ league, projections }: { league: LeagueAnalysis; project
   );
 }
 
-function SquadStrength({ league }: { league: LeagueAnalysis }) {
-  const [horizon, setHorizon] = useState<Horizon>(3);
-  const available = league.gameweeks.length;
+function SquadStrength({ league, horizon, setHorizon }: {
+  league: LeagueAnalysis; horizon: Horizon; setHorizon: (h: Horizon) => void;
+}) {
   const rows = useMemo(
     () => [...league.managers].sort((a, b) => b.strength[horizon] - a.strength[horizon]),
     [league, horizon],
   );
   const max = rows[0]?.strength[horizon] || 1;
   const min = Math.min(...rows.map((m) => m.strength[horizon]));
-  const first = league.gameweeks[0];
-  const last = league.gameweeks[Math.min(horizon, available) - 1];
-
   return (
     <section className="card" aria-labelledby="strength-h">
       <div className="title-row">
         <h2 id="strength-h">Squad strength</h2>
-        <div className="segmented" role="radiogroup" aria-label="Gameweeks ahead">
-          {HORIZONS.map((h) => (
-            <button
-              key={h}
-              role="radio"
-              aria-checked={h === horizon}
-              className={h === horizon ? "on" : ""}
-              onClick={() => setHorizon(h)}
-            >
-              {HORIZON_LABEL[h]}
-            </button>
-          ))}
-        </div>
+        <HorizonToggle value={horizon} onChange={setHorizon} />
       </div>
       <p className="muted">
-        Best XI Projections summed over GW{first}{last !== first ? `–${last}` : ""}, with today's Squads and
-        optimal lineups. It shows each Squad's potential, not what its Manager will do.
+        Best XI Projections summed over {gwRange(league.gameweeks.slice(0, horizon))}, with today's Squads and
+        optimal lineups. It shows each Squad's potential, not what its Manager will do. Tap a Manager to see their Squad.
       </p>
       <ol className="strength">
         {rows.map((m, i) => {
@@ -151,13 +103,15 @@ function SquadStrength({ league }: { league: LeagueAnalysis }) {
           const width = max > floor ? 8 + ((m.strength[horizon] - floor) / (max - floor)) * 92 : 100;
           return (
             <li key={m.entryId}>
-              <span className="pos">{i + 1}</span>
-              <div className="who">
-                <span className="team">{m.teamName}</span>
-                <span className="muted small">{m.managerName} · {ordinal(m.table.rank)} in table</span>
-                <span className="bar" style={{ width: `${width}%` }} />
-              </div>
-              <span className="value">{pts(m.strength[horizon])}</span>
+              <Link to={squadPath(league, m, horizon)} className="strength-row">
+                <span className="pos">{i + 1}</span>
+                <div className="who">
+                  <span className="team">{m.teamName}</span>
+                  <span className="muted small">{m.managerName} · {ordinal(m.table.rank)} in table</span>
+                  <span className="bar" style={{ width: `${width}%` }} />
+                </div>
+                <span className="value">{pts(m.strength[horizon])}</span>
+              </Link>
             </li>
           );
         })}
@@ -166,7 +120,7 @@ function SquadStrength({ league }: { league: LeagueAnalysis }) {
   );
 }
 
-function LeagueTable({ league }: { league: LeagueAnalysis }) {
+function LeagueTable({ league, horizon }: { league: LeagueAnalysis; horizon: Horizon }) {
   const h2h = league.format === "h2h";
   return (
     <section className="card" aria-labelledby="table-h">
@@ -198,7 +152,7 @@ function LeagueTable({ league }: { league: LeagueAnalysis }) {
               <tr key={m.entryId}>
                 <td>{m.table.rank}</td>
                 <td className="left">
-                  <span className="team">{m.teamName}</span>
+                  <Link to={squadPath(league, m, horizon)} className="team">{m.teamName}</Link>
                   <span className="muted small block">{m.managerName}</span>
                 </td>
                 {h2h ? (
@@ -222,9 +176,4 @@ function LeagueTable({ league }: { league: LeagueAnalysis }) {
       </div>
     </section>
   );
-}
-
-function ordinal(n: number) {
-  const s = n % 100 >= 11 && n % 100 <= 13 ? "th" : ({ 1: "st", 2: "nd", 3: "rd" } as Record<number, string>)[n % 10] ?? "th";
-  return `${n}${s}`;
 }
