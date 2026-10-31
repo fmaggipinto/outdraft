@@ -42,6 +42,14 @@ def test_projections_are_sane(published):
     assert regulars and sum(x["projections"][0] for x in regulars) / len(regulars) > 2
 
 
+def test_capped_points_average_limits_hauls_to_ten(published):
+    players = read(published / "projections.json")["players"]
+    assert all(0 <= x["points_avg_capped"] <= 10 for x in players)
+    # Capping can only lower the average (allowing for rounding to 2 decimals).
+    assert all(x["points_avg_capped"] <= x["total_points"] / 8 + 0.005 for x in players)
+    assert any(x["points_avg_capped"] < x["total_points"] / 8 - 0.5 for x in players)
+
+
 def test_unavailable_players_project_zero_and_doubts_are_scaled(published, season):
     by_id = {x["id"]: x for x in read(published / "projections.json")["players"]}
     out = [p for p in season.players.values() if p["status"] in ("i", "s", "u", "n")]

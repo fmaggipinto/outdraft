@@ -173,6 +173,30 @@ h1 .tag.you { font-size: 12px; vertical-align: 4px; }
 tr.me td { background: var(--acc-soft); }
 tr.me td:first-child { box-shadow: inset 3px 0 0 var(--acc); }
 
+/* League section tabs */
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin: 0 0 14px; }
+.tabs a { padding: 8px 12px; text-decoration: none; color: var(--mute); font-weight: 600; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.tabs a.on { color: var(--ink); border-bottom-color: var(--acc); }
+
+/* Waivers */
+.phase p { margin: 0; }
+.phase-waivers { border-left: 4px solid var(--acc); }
+.phase-processing { border-left: 4px solid var(--warn); }
+.phase-free { border-left: 4px solid var(--mid); }
+.targets { list-style: none; margin: 10px 0; padding: 0; }
+.targets li { display: grid; grid-template-columns: 22px 1fr auto; gap: 10px; align-items: start; padding: 10px 0; border-top: 1px solid var(--line); }
+.targets li:first-child { border-top: 0; }
+.targets .pos { color: var(--mute); text-align: right; font-variant-numeric: tabular-nums; padding-top: 1px; }
+.targets .who { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.targets .team { font-weight: 700; }
+.targets .tag { margin-left: 6px; }
+.targets .proj { font-variant-numeric: tabular-nums; }
+.gain { font-weight: 800; color: var(--acc); font-variant-numeric: tabular-nums; font-size: 16px; }
+.order { margin: 8px 0 0; padding-left: 24px; }
+.order li { padding: 4px 6px; border-radius: 6px; }
+.order li.me { background: var(--acc-soft); font-weight: 600; }
+.order .team { font-weight: 600; }
+
 @media (max-width: 420px) {
   h1 { font-size: 21px; }
   .open-form .row { flex-direction: column; }

@@ -2,12 +2,12 @@ import { useEffect, useState } from "react";
 import { navigate } from "./App";
 import { analyseLeague, type LeagueAnalysis } from "./analysis/league";
 import { fetchLeague, fetchProjections, NotFoundError } from "./data";
-import type { Projections } from "./types";
+import type { ElementStatus, Projections } from "./types";
 
 export type LeagueState =
   | { kind: "loading" }
   | { kind: "error"; message: string; retry: boolean }
-  | { kind: "ready"; league: LeagueAnalysis; projections: Projections };
+  | { kind: "ready"; league: LeagueAnalysis; projections: Projections; status: ElementStatus };
 
 // Kept for the session so moving between the League and Squad screens is instant.
 const cache = new Map<number, Extract<LeagueState, { kind: "ready" }>>();
@@ -23,7 +23,7 @@ export function useLeague(id: number): [LeagueState, () => void] {
     setState({ kind: "loading" });
     Promise.all([fetchLeague(id), fetchProjections()])
       .then(([[details, status], projections]) => {
-        const ready = { kind: "ready" as const, league: analyseLeague(details, status, projections), projections };
+        const ready = { kind: "ready" as const, league: analyseLeague(details, status, projections), projections, status };
         cache.set(id, ready);
         if (live) setState(ready);
       })

@@ -110,6 +110,7 @@ def players_table(model, season, gws, proj):
             "status": e["status"], "chance_next": e["chance_of_playing_next_round"],
             "news": (e["news"] or "").strip(), "draft_rank": e["draft_rank"],
             "minutes": int(sum(h["minutes"])), "total_points": int(sum(h["total_points"])),
+            "points_avg_capped": round(xg.mean(min(p, xg.CAP) for p in h["total_points"]), 2),
             "starts_recent": int(sum(h["starts"][-xg.RECENT:])),
             "points_recent": [int(x) for x in h["total_points"][-xg.RECENT:]],
             "xg90": round(r["xg90"], 3), "xa90": round(r["xa90"], 3),

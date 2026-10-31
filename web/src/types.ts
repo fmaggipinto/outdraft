@@ -18,6 +18,11 @@ export interface ProjectedPlayer {
   status: string;
   chance_next: number | null;
   news: string;
+  draft_rank: number | null;
+  minutes: number;
+  total_points: number;
+  /** Missing from files published before the Model job added it. */
+  points_avg_capped?: number;
   projections: number[];
 }
 
@@ -57,6 +62,24 @@ export interface LeagueDetails {
   league: { id: number; name: string; scoring: "c" | "h" };
   league_entries: LeagueEntry[];
   standings: Standing[];
+}
+
+export interface Game {
+  current_event: number;
+  current_event_finished: boolean;
+  next_event: number | null;
+  waivers_processed: boolean;
+}
+
+export interface Transactions {
+  transactions: {
+    element_in: number;
+    element_out: number;
+    entry: number;
+    event: number;
+    kind: string;    // "w" waiver claim, "f" free-agent signing
+    result: string;  // "a" accepted
+  }[];
 }
 
 export interface ElementStatus {
