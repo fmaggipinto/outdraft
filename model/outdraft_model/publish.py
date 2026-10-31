@@ -8,6 +8,7 @@ import json
 from datetime import timedelta
 from pathlib import Path
 
+from . import distribution
 from . import model as xg
 from .api import load_season, parse_time
 
@@ -99,6 +100,19 @@ def squad_rules(rules):
             "max_play": {str(p): rules[f"max_play_{n}"] for p, n in names.items()}}
 
 
+def score_distributions(model, gws, params, proj):
+    """{Player id: [compact Score distribution per gameweek]}. Players projected
+    0 in every gameweek are left out: they always score 0."""
+    out = {}
+    for pid in sorted(proj):
+        if not any(proj[pid]):
+            continue
+        pos = model.el[pid]["element_type"]
+        out[str(pid)] = [distribution.compact(
+            distribution.gameweek_distribution(model.fixture_parts(pid, gw, params), pos)) for gw in gws]
+    return out
+
+
 def players_table(model, season, gws, proj):
     out = []
     for pid in sorted(season.players):
@@ -155,6 +169,13 @@ def run(api, out_dir, now):
         }
         if write_if_changed(out / "projections.json", projections):
             summary["written"].append("projections.json")
+
+        distributions = {
+            "updated_at": stamp, "model_version": xg.VERSION, "gameweeks": gws,
+            "players": score_distributions(model, gws, params, proj),
+        }
+        if write_if_changed(out / "distributions.json", distributions):
+            summary["written"].append("distributions.json")
 
         snapshot = {
             "updated_at": stamp, "gameweek": nxt, "deadline": iso(season.event(nxt)["deadline"]),

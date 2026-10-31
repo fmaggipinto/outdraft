@@ -27,6 +27,17 @@ export interface ManagerAnalysis {
   };
 }
 
+export interface Matchup {
+  gameweek: number;
+  /** Entry ids, matching ManagerAnalysis.entryId. */
+  home: number;
+  away: number;
+  finished: boolean;
+  started: boolean;
+  homePoints: number;
+  awayPoints: number;
+}
+
 export interface LeagueAnalysis {
   id: number;
   name: string;
@@ -35,6 +46,8 @@ export interface LeagueAnalysis {
   gameweeks: number[];
   /** In League table order. */
   managers: ManagerAnalysis[];
+  /** Head-to-head Matchups for the season (empty in Classic Leagues). */
+  matchups: Matchup[];
 }
 
 /** Squad strength: the sum of a Squad's Best XI Projections over the first
@@ -94,6 +107,15 @@ export function analyseLeague(
   });
   managers.sort((a, b) => a.table.rank - b.table.rank || a.teamName.localeCompare(b.teamName));
 
+  const entryOf = new Map(details.league_entries.map((e) => [e.id, e.entry_id]));
+  const matchups = (h2h ? details.matches ?? [] : []).flatMap((m): Matchup[] => {
+    const home = entryOf.get(m.league_entry_1), away = entryOf.get(m.league_entry_2);
+    return home && away ? [{
+      gameweek: m.event, home, away, finished: m.finished, started: m.started,
+      homePoints: m.league_entry_1_points, awayPoints: m.league_entry_2_points,
+    }] : [];
+  });
+
   return {
     id: details.league.id,
     name: details.league.name,
@@ -101,5 +123,6 @@ export function analyseLeague(
     drafted: squads.size > 0,
     gameweeks: projections.gameweeks,
     managers,
+    matchups,
   };
 }

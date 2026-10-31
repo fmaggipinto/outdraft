@@ -205,3 +205,16 @@ tr.me td:first-child { box-shadow: inset 3px 0 0 var(--acc); }
 /* Rival interest */
 .targets .rivals { margin-top: 3px; line-height: 1.35; }
 .targets .rivals .ahead { color: var(--err); font-weight: 600; }
+
+/* Matchups */
+.gw-picker { margin: 0 0 12px; flex-wrap: wrap; }
+.matchup .side { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 4px 0; }
+.matchup .who { display: flex; flex-direction: column; min-width: 0; }
+.matchup .team { font-weight: 700; }
+.matchup .win { font-weight: 800; font-size: 18px; font-variant-numeric: tabular-nums; }
+.matchup.mine { border-color: var(--acc); box-shadow: inset 3px 0 0 var(--acc); }
+.wdl { display: flex; height: 8px; border-radius: 4px; overflow: hidden; margin: 8px 0 4px; background: var(--line); }
+.wdl .h { background: var(--acc); }
+.wdl .d { background: var(--mute); opacity: 0.5; }
+.wdl .a { background: var(--mid); }
+.wdl-text { margin: 0; }

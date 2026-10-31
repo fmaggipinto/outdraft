@@ -1,6 +1,7 @@
 import { Component, useEffect, useState, type ReactNode } from "react";
 import { Home } from "./screens/Home";
 import { League } from "./screens/League";
+import { Matchups } from "./screens/Matchups";
 import { Squad } from "./screens/Squad";
 import { Waivers } from "./screens/Waivers";
 
@@ -58,6 +59,7 @@ function usePath() {
 export function App() {
   const path = usePath();
   const league = path.match(/^\/league\/(\d{1,9})\/?$/);
+  const matchups = path.match(/^\/league\/(\d{1,9})\/matchups\/?$/);
   const waivers = path.match(/^\/league\/(\d{1,9})\/waivers\/?$/);
   const squad = path.match(/^\/league\/(\d{1,9})\/manager\/(\d{1,9})\/?$/);
   return (
@@ -71,6 +73,7 @@ export function App() {
         <Crashed key={path}>
           {squad ? <Squad leagueId={Number(squad[1])} entryId={Number(squad[2])} />
             : waivers ? <Waivers id={Number(waivers[1])} />
+            : matchups ? <Matchups id={Number(matchups[1])} />
             : league ? <League id={Number(league[1])} />
             : <Home />}
         </Crashed>

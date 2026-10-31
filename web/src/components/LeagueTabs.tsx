@@ -2,8 +2,9 @@ import { Link } from "../App";
 import type { Horizon, LeagueAnalysis } from "../analysis/league";
 
 const TABS = [
-  { key: "league", label: "League", path: "" },
-  { key: "waivers", label: "Waivers", path: "/waivers" },
+  { key: "league", label: "League", path: "", h2hOnly: false },
+  { key: "matchups", label: "Matchups", path: "/matchups", h2hOnly: true },
+  { key: "waivers", label: "Waivers", path: "/waivers", h2hOnly: false },
 ] as const;
 
 export function LeagueTabs({ league, active, horizon }: {
@@ -11,7 +12,7 @@ export function LeagueTabs({ league, active, horizon }: {
 }) {
   return (
     <nav className="tabs" aria-label="League sections">
-      {TABS.map((t) => (
+      {TABS.filter((t) => !t.h2hOnly || league.format === "h2h").map((t) => (
         <Link
           key={t.key}
           to={`/league/${league.id}${t.path}?h=${horizon}`}

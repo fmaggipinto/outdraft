@@ -58,10 +58,30 @@ export interface Standing {
   points_for?: number;
 }
 
+export interface Match {
+  event: number;
+  league_entry_1: number;
+  league_entry_2: number;
+  league_entry_1_points: number;
+  league_entry_2_points: number;
+  finished: boolean;
+  started: boolean;
+}
+
 export interface LeagueDetails {
   league: { id: number; name: string; scoring: "c" | "h" };
   league_entries: LeagueEntry[];
   standings: Standing[];
+  /** Head-to-head only: the whole season's Matchups. */
+  matches?: Match[];
+}
+
+/** distributions.json: per Player, one [points, probabilities] pair per gameweek. */
+export interface Distributions {
+  updated_at: string;
+  model_version: number;
+  gameweeks: number[];
+  players: Record<string, [number[], number[]][]>;
 }
 
 export interface Game {
