@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { LeagueAnalysis } from "../analysis/league";
-import { POSITIONS, seasonPointsByPosition, sortRows, type ShareMode } from "../analysis/seasonPoints";
+import { POSITIONS, seasonPointsByPosition, sortRows, type SeasonPositionRow, type ShareMode } from "../analysis/seasonPoints";
 import { fetchPicks, fetchResults } from "../data";
 import type { ElementStatus, Picks, Position, Projections, Results } from "../types";
 import { YouTag } from "./ClaimCard";
@@ -36,8 +36,6 @@ export function SeasonByPosition({ league, projections, status, me }: {
   league: LeagueAnalysis; projections: Projections; status: ElementStatus; me: number | null;
 }) {
   const [load, setLoad] = useState<Load>({ kind: "loading", done: 0, of: 0 });
-  const [mode, setMode] = useState<ShareMode>("points");
-  const [sortBy, setSortBy] = useState<Position | null>(null);
 
   useEffect(() => {
     let live = true;
@@ -51,14 +49,32 @@ export function SeasonByPosition({ league, projections, status, me }: {
   }, [league]);
 
   const rows = useMemo(() => (load.kind === "ready"
-    ? sortRows(seasonPointsByPosition({ managers: league.managers, picks: load.picks, results: load.results, players: projections.players, status }), sortBy, mode)
-    : []), [load, league, projections, status, sortBy, mode]);
-  const max = Math.max(1, ...rows.map((r) => r.total));
+    ? seasonPointsByPosition({ managers: league.managers, picks: load.picks, results: load.results, players: projections.players, status })
+    : null), [load, league, projections, status]);
 
   return (
-    <section aria-labelledby="bypos-h">
+    <PositionStacks id="bypos-h" title="Season points by position" me={me} rows={rows}
+      note="Points each Manager actually scored, from their starting XI after auto-subs, split by the position of the Players who earned them. Below each bar: their top 3 scorers."
+      status={load.kind === "loading"
+        ? `Loading lineups${load.of ? ` (${load.done} of ${load.of})` : ""}…`
+        : load.kind === "error" ? "Couldn't load the lineups right now." : null} />
+  );
+}
+
+/** Stacked bars by position, one per Manager, with a Points / % share toggle,
+ * sorting by total or position, values in text and each row's top 3. */
+export function PositionStacks({ id, title, note, rows, status, me }: {
+  id: string; title: string; note: string; rows: SeasonPositionRow[] | null; status: string | null; me: number | null;
+}) {
+  const [mode, setMode] = useState<ShareMode>("points");
+  const [sortBy, setSortBy] = useState<Position | null>(null);
+  const sorted = rows ? sortRows(rows, sortBy, mode) : [];
+  const max = Math.max(1, ...sorted.map((r) => r.total));
+
+  return (
+    <section aria-labelledby={id}>
       <div className="section-head">
-        <h2 id="bypos-h">Season points by position</h2>
+        <h2 id={id}>{title}</h2>
         <div className="segmented" role="radiogroup" aria-label="Show">
           {(["points", "share"] as const).map((m) => (
             <button key={m} role="radio" aria-checked={m === mode} className={m === mode ? "on" : ""} onClick={() => setMode(m)}>
@@ -68,14 +84,9 @@ export function SeasonByPosition({ league, projections, status, me }: {
         </div>
       </div>
       <div className="card">
-        <p className="muted small">
-          Points each Manager actually scored, from their starting XI after auto-subs, split by the position of the
-          Players who earned them. Below each bar: their top 3 scorers.
-        </p>
-        {load.kind === "loading" ? (
-          <p className="muted" role="status">Loading lineups{load.of ? ` (${load.done} of ${load.of})` : ""}…</p>
-        ) : load.kind === "error" ? (
-          <p className="muted" role="status">Couldn't load the lineups right now.</p>
+        <p className="muted small">{note}</p>
+        {!rows ? (
+          <p className="muted" role="status">{status}</p>
         ) : (
           <>
             <div className="segmented sort-by" role="radiogroup" aria-label="Sort by">
@@ -86,8 +97,7 @@ export function SeasonByPosition({ league, projections, status, me }: {
               ))}
             </div>
             <ol className="bypos">
-              {rows.map((r) => {
-                const share = (p: Position) => (r.total ? (r.byPosition[p] / r.total) * 100 : 0);
+              {sorted.map((r) => {                const share = (p: Position) => (r.total ? (r.byPosition[p] / r.total) * 100 : 0);
                 const label = (p: Position) => (mode === "share" ? `${Math.round(share(p))}%` : String(r.byPosition[p]));
                 const width = mode === "share" ? 100 : (r.total / max) * 100;
                 const headline = sortBy == null

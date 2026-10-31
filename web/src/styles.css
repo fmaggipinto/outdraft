@@ -371,3 +371,6 @@ body:has(.tabbar) footer { padding-bottom: 88px; }
 .ppg-key .k.bar { width: 10px; height: 12px; background: var(--accent); }
 .ppg-key .k.avg { width: 18px; height: 0; border-top: 2.5px solid var(--ink); }
 .ppg-key .k.best { width: 9px; height: 9px; background: var(--win); border-radius: 50% !important; }
+.last3 { color: var(--muted); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+/* Long Manager names wrap, so the table never needs sideways scrolling. */
+section[aria-labelledby="table-h"] td.left { white-space: normal; overflow-wrap: anywhere; }

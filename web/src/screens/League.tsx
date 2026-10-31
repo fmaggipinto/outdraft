@@ -7,7 +7,9 @@ import { MatchupsSection } from "../components/MatchupsSection";
 import { PointsPerGameweek } from "../components/PointsPerGameweek";
 import { RankOverTime } from "../components/RankOverTime";
 import { Screen } from "../components/Screen";
-import { SeasonByPosition } from "../components/SeasonByPosition";
+import { useRankHistory } from "../seasonHistory";
+import { PositionStacks, SeasonByPosition } from "../components/SeasonByPosition";
+import { currentSquadPoints } from "../analysis/seasonPoints";
 import { ordinal, pts, relative, when } from "../format";
 import { gwRange, HorizonToggle, useHorizon } from "../horizon";
 import type { Projections } from "../types";
@@ -38,13 +40,16 @@ export function League({ id }: { id: number }) {
       {league.drafted ? (
         <>
           {me == null && <ClaimCard league={league} me={me} setClaim={setClaim} />}
-          <LeagueTable league={league} horizon={horizon} me={me} />
+          <LeagueTable league={league} horizon={horizon} me={me} lastFinished={projections.based_on_gameweek} />
           {league.format === "h2h" && <MatchupsSection league={league} me={me} />}
           <SquadStrength league={league} horizon={horizon} setHorizon={setHorizon} me={me} />
           <h2 className="season-title">Season</h2>
           <RankOverTime league={league} lastFinished={projections.based_on_gameweek} me={me} />
           <PointsPerGameweek league={league} lastFinished={projections.based_on_gameweek} me={me} />
           <SeasonByPosition league={league} projections={projections} status={state.status} me={me} />
+          <PositionStacks id="holding-h" title="Current Squad's season points by position" me={me} status={null}
+            rows={currentSquadPoints(league.managers, projections.players)}
+            note="Season points of the Players each Manager holds now, wherever they earned them: another Squad, the bench, or before being signed. Not the League score, and not Squad strength. Below each bar: the Squad's top 3 scorers." />
         </>
       ) : (
         <div className="card" role="status">
@@ -119,8 +124,18 @@ function SquadStrength({ league, horizon, setHorizon, me }: {
   );
 }
 
-function LeagueTable({ league, horizon, me }: { league: LeagueAnalysis; horizon: Horizon; me: number | null }) {
+function LeagueTable({ league, horizon, me, lastFinished }: {
+  league: LeagueAnalysis; horizon: Horizon; me: number | null; lastFinished: number;
+}) {
   const h2h = league.format === "h2h";
+  // Each Manager's last 3 finished gameweek scores, oldest first (dashboard parity).
+  const history = useRankHistory(league, lastFinished);
+  const last3 = (entryId: number) => {
+    if (history.kind !== "ready") return history.kind === "loading" ? "…" : "–";
+    const pts = history.data.points.get(entryId) ?? [];
+    return pts.slice(-3).map((x) => x ?? "–").join(" · ") || "–";
+  };
+  const last3Gws = history.kind === "ready" ? history.data.gameweeks.slice(-3) : [];
   return (
     <section aria-labelledby="table-h">
       <div className="section-head">
@@ -142,10 +157,7 @@ function LeagueTable({ league, horizon, me }: { league: LeagueAnalysis; horizon:
                     <th scope="col">Pts</th>
                   </>
                 ) : (
-                  <>
-                    <th scope="col" title="Points this gameweek">GW</th>
-                    <th scope="col">Total</th>
-                  </>
+                  <th scope="col">Total</th>
                 )}
               </tr>
             </thead>
@@ -156,6 +168,9 @@ function LeagueTable({ league, horizon, me }: { league: LeagueAnalysis; horizon:
                   <td className="left">
                     <Link to={squadPath(league, m, horizon)} className="team">{m.teamName}</Link> <YouTag show={m.entryId === me} />
                     <span className="muted small block">{m.managerName}</span>
+                    <span className="last3 block" title={last3Gws.length ? `GW${last3Gws.join(", GW")}` : undefined}>
+                      Last 3: {last3(m.entryId)}
+                    </span>
                   </td>
                   {h2h ? (
                     <>
@@ -166,10 +181,7 @@ function LeagueTable({ league, horizon, me }: { league: LeagueAnalysis; horizon:
                       <td className="strong">{m.table.total}</td>
                     </>
                   ) : (
-                    <>
-                      <td>{m.table.gameweekPoints ?? "–"}</td>
-                      <td className="strong">{m.table.total}</td>
-                    </>
+                    <td className="strong">{m.table.total}</td>
                   )}
                 </tr>
               ))}
