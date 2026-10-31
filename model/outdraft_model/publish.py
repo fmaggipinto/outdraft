@@ -177,11 +177,9 @@ def run(api, out_dir, now):
     return summary
 
 
-def due(api, now):
-    """Whether a scheduled run should do the full job: at the top of each hour,
-    and every 15 minutes within FAST_WINDOW of a Gameweek deadline."""
-    if now.minute < 15:
-        return True
+def near_deadline(api, now):
+    """Whether a Gameweek deadline is within FAST_WINDOW, when the extra runs
+    between the hourly ones are worth doing."""
     boot = api.get("bootstrap-static")
     for ev in boot["events"]["data"]:
         d = parse_time(ev["deadline_time"])

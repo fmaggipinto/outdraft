@@ -5,7 +5,7 @@ import pytest
 from conftest import GW10_DEADLINE, EditedApi, utc
 
 from outdraft_model.api import ApiShapeError
-from outdraft_model.publish import due, run
+from outdraft_model.publish import near_deadline, run
 
 
 def read(path):
@@ -89,8 +89,9 @@ def test_missing_api_fields_fail_loudly(tmp_path):
         run(EditedApi("bootstrap-static", drop_deadlines), tmp_path, utc(2026, 11, 1))
 
 
-def test_scheduled_runs_are_hourly_and_every_15_minutes_near_a_deadline(api):
-    assert due(api, utc(2026, 11, 2, 9, 5))
-    assert not due(api, utc(2026, 11, 2, 9, 30))
-    assert due(api, GW10_DEADLINE - timedelta(hours=2, minutes=15))
-    assert not due(api, GW10_DEADLINE + timedelta(minutes=45))
+def test_extra_runs_only_happen_within_6_hours_of_a_deadline(api):
+    assert not near_deadline(api, utc(2026, 11, 2, 9, 22))
+    assert near_deadline(api, GW10_DEADLINE - timedelta(hours=5, minutes=50))
+    assert near_deadline(api, GW10_DEADLINE - timedelta(minutes=8))
+    assert not near_deadline(api, GW10_DEADLINE - timedelta(hours=6, minutes=8))
+    assert not near_deadline(api, GW10_DEADLINE + timedelta(minutes=7))
