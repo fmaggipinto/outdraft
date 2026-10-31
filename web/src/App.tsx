@@ -1,4 +1,6 @@
 import { Component, useEffect, useState, type ReactNode } from "react";
+import { clearStale, useStaleSince } from "./data";
+import { relative, when } from "./format";
 import { Home } from "./screens/Home";
 import { League } from "./screens/League";
 import { Fixtures } from "./screens/Fixtures";
@@ -48,10 +50,28 @@ class Crashed extends Component<{ children: ReactNode }, { failed: boolean }> {
   }
 }
 
+/** Shown when what's on screen came from data saved on this device. */
+function StaleNotice() {
+  const since = useStaleSince();
+  if (since == null) return null;
+  const iso = new Date(since).toISOString();
+  return (
+    <div className="stale" role="status">
+      <p>
+        <b>FPL Draft isn't responding,</b> so this is the data from {when(iso)} ({relative(iso)}), saved on this device.
+      </p>
+      <button type="button" className="ghost" onClick={() => location.reload()}>Try again</button>
+    </div>
+  );
+}
+
 function usePath() {
   const [path, setPath] = useState(location.pathname);
   useEffect(() => {
-    const update = () => setPath(location.pathname);
+    const update = () => {
+      clearStale();   // also for the browser's Back and Forward
+      setPath(location.pathname);
+    };
     addEventListener("popstate", update);
     return () => removeEventListener("popstate", update);
   }, []);
@@ -73,6 +93,7 @@ export function App() {
           Outdraft
         </a>
       </header>
+      <StaleNotice />
       <main>
         <Crashed key={path}>
           {squad ? <Squad leagueId={Number(squad[1])} entryId={Number(squad[2])} />
