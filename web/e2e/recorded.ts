@@ -17,6 +17,13 @@ export async function serveRecorded(page: Page, game: Record<string, unknown> = 
       ? r.fulfill({ body: readFileSync(file, "utf8"), ...json })
       : r.fulfill({ status: 404, body: "{}" });
   });
+  await page.route("**/api/fpl/entry/*/history", (r) => {
+    const entry = new URL(r.request().url()).pathname.match(/entry\/(\d+)\/history/)![1];
+    const file = new URL(`../tests/fixtures/history/${entry}.json`, import.meta.url);
+    return existsSync(file)
+      ? r.fulfill({ body: readFileSync(file, "utf8"), ...json })
+      : r.fulfill({ status: 404, body: "{}" });
+  });
   await page.route("**/data/distributions.json", (r) => r.fulfill({ body: fixture("distributions.json"), ...json }));
   await page.route("**/api/fpl/game", (r) =>
     r.fulfill({ body: JSON.stringify({ ...JSON.parse(fixture("game.json")), ...game }), ...json }));

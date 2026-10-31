@@ -334,3 +334,27 @@ body:has(.tabbar) footer { padding-bottom: 88px; }
 .left-squad { color: var(--muted); font-style: italic; }
 .bypos .values { display: flex; flex-wrap: wrap; gap: 2px 12px; margin: 0; }
 .bypos .values .dot { display: inline-block; width: 9px; height: 9px; margin-right: 4px; vertical-align: 0; }
+
+/* Rank over time */
+.rank-chart { width: 100%; max-width: 560px; height: auto; display: block; margin: 0 auto; }
+.rank-chart .grid { stroke: var(--rule); stroke-width: 1; }
+.rank-chart .axis { fill: var(--muted); font-family: "Barlow Condensed", sans-serif; font-weight: 700; font-size: 12px; }
+.rank-chart .line { fill: none; stroke: var(--muted); stroke-width: 1.8; stroke-linejoin: miter; opacity: 0.55; }
+.rank-chart .line.dim { opacity: 0.18; }
+.rank-chart .line.mine { stroke: var(--accent); stroke-width: 3.5; opacity: 1; }
+.rank-chart .line.picked { stroke: var(--ink); stroke-width: 3.5; opacity: 1; stroke-dasharray: 7 4; }
+.rank-chart circle.line { fill: var(--card); stroke-dasharray: none; }
+.chart-note { margin: 4px 0 8px; }
+.rank-legend { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.rank-legend button {
+  width: 100%; display: flex; align-items: center; gap: 8px; text-align: left;
+  background: transparent; color: var(--ink); border: 1.5px solid var(--rule); padding: 6px 8px; font-weight: 600; min-height: 44px;
+}
+.rank-legend .swatch { width: 18px; height: 3px; background: var(--muted); flex: 0 0 18px; }
+.rank-legend button.mine .swatch { background: var(--accent); height: 5px; }
+.rank-legend button.on { border-color: var(--ink); background: var(--highlight); }
+.rank-legend button.on .swatch { height: 0; border-top: 5px dashed var(--ink); background: none; }
+.rank-legend button { min-width: 0; overflow: hidden; }
+.rank-legend .name { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rank-legend .path { margin-left: auto; color: var(--muted); font-weight: 400; font-size: 12.5px; white-space: nowrap; }
+.rank-legend .tag { margin-left: 0; }
