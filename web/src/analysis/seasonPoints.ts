@@ -84,3 +84,21 @@ export function sortRows(rows: SeasonPositionRow[], by: Position | null, mode: S
     by == null ? r.total : mode === "share" ? (r.total ? r.byPosition[by] / r.total : 0) : r.byPosition[by];
   return [...rows].sort((a, b) => value(b) - value(a) || a.manager.table.rank - b.manager.table.rank);
 }
+
+/**
+ * Current Squad's season points by position (dashboard parity): the season
+ * points of the Players each Manager holds now, wherever they earned them
+ * (another Squad, the bench, before signing). Not the League score, and not
+ * Squad strength, which is projected Best XI points.
+ */
+export function currentSquadPoints(managers: ManagerAnalysis[], players: ProjectedPlayer[]): SeasonPositionRow[] {
+  const byId = new Map(players.map((p) => [p.id, p]));
+  return managers.map((manager) => {
+    const byPosition = { 1: 0, 2: 0, 3: 0, 4: 0 } as Record<Position, number>;
+    const squad = manager.squad.map((id) => byId.get(id)).filter((p): p is ProjectedPlayer => !!p);
+    for (const p of squad) byPosition[p.position] += p.total_points;
+    const top = [...squad].sort((a, b) => b.total_points - a.total_points || a.id - b.id).slice(0, 3)
+      .map((player) => ({ player, points: player.total_points, stillOwned: true }));
+    return { manager, byPosition, total: POSITIONS.reduce((s, pos) => s + byPosition[pos], 0), top, gameweeks: 0 };
+  });
+}

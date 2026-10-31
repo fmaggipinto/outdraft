@@ -6,7 +6,7 @@ import projectionsJson from "../../tests/fixtures/projections.json";
 import resultsJson from "../../tests/fixtures/results.json";
 import type { ElementStatus, LeagueDetails, Picks, Projections, Results } from "../types";
 import { analyseLeague } from "./league";
-import { POSITIONS, seasonPointsByPosition, sortRows, startingXI } from "./seasonPoints";
+import { currentSquadPoints, POSITIONS, seasonPointsByPosition, sortRows, startingXI } from "./seasonPoints";
 
 const projections = projectionsJson as unknown as Projections;
 const results = resultsJson as Results;
@@ -83,5 +83,31 @@ describe("sortRows", () => {
     expect(byMid).toEqual([...byMid].sort((a, b) => b - a));
     const share = sortRows(rows, 2, "share").map((r) => r.byPosition[2] / r.total);
     expect(share).toEqual([...share].sort((a, b) => b - a));
+  });
+});
+
+describe("currentSquadPoints", () => {
+  const current = currentSquadPoints(league.managers, projections.players);
+  const byId = new Map(projections.players.map((p) => [p.id, p]));
+
+  it("sums the season points of the Players each Squad holds now, by position", () => {
+    for (const r of current) {
+      expect(r.total).toBe(r.manager.squad.reduce((s, id) => s + (byId.get(id)?.total_points ?? 0), 0));
+      for (const pos of POSITIONS) {
+        expect(r.byPosition[pos]).toBe(r.manager.squad.filter((id) => byId.get(id)?.position === pos)
+          .reduce((s, id) => s + byId.get(id)!.total_points, 0));
+      }
+    }
+  });
+
+  it("is a different figure from the League score", () => {
+    expect(current.some((r) => r.total !== r.manager.table.total)).toBe(true);
+  });
+
+  it("names each Squad's 3 highest scorers, all still owned", () => {
+    for (const r of current) {
+      expect(r.top).toHaveLength(3);
+      expect(r.top.every((s) => s.stillOwned && r.manager.squad.includes(s.player.id))).toBe(true);
+    }
   });
 });

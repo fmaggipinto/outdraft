@@ -161,7 +161,7 @@ test("offers the deadlines calendar for Apple, Outlook and Google under More", a
 
 test("shows Season points by position with top scorers, a Points / % share toggle and sorting", async ({ page }) => {
   await page.goto("/league/5000");
-  const section = page.getByRole("region", { name: "Season points by position" });
+  const section = page.getByRole("region", { name: "Season points by position", exact: true });
   const rows = section.locator(".bypos > li");
   await expect(rows).toHaveCount(8);
   // Each Manager's season total matches the League table.
@@ -222,4 +222,31 @@ test("shows points per gameweek against the League average and best", async ({ p
   await expect(section.locator(".ppg-key")).toContainText("Team C");
   // Both Season charts share one history request per Manager.
   expect(histories).toHaveLength(8);
+});
+
+test("shows each Manager's last 3 gameweek scores in the table, without sideways scrolling", async ({ page }) => {
+  const details = JSON.parse(fixture("classic-details.json"));
+  const first = details.league_entries[0];
+  const history = JSON.parse(fixture(`history/${first.entry_id}.json`)).history
+    .filter((r: { event: number }) => r.event <= 8).map((r: { points: number }) => r.points);
+  await page.goto("/league/5000");
+  const row = page.getByRole("region", { name: "League table" }).getByRole("row").filter({ hasText: first.entry_name });
+  await expect(row.locator(".last3")).toHaveText(`Last 3: ${history.slice(-3).join(" · ")}`);
+
+  for (const id of ["5000", "130000"]) {
+    await page.goto(`/league/${id}`);
+    const scroll = page.getByRole("region", { name: "League table" }).locator(".scroll");
+    await expect(scroll.locator(".last3").first()).not.toHaveText("Last 3: …");
+    expect(await scroll.evaluate((el) => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(0);
+  }
+});
+
+test("shows the current Squad's season points by position, which isn't the League score", async ({ page }) => {
+  await page.goto("/league/5000");
+  const section = page.getByRole("region", { name: "Current Squad's season points by position" });
+  const rows = section.locator(".bypos > li");
+  await expect(rows).toHaveCount(8);
+  await expect(section).toContainText("Not the League score");
+  await expect(rows.first().locator(".top3")).toContainText(/1\. .+ \d+/);
+  await expect(rows.first().locator(".left-squad")).toHaveCount(0);
 });
