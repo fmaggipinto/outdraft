@@ -6,7 +6,8 @@ import { StatusTag } from "../components/FreeAgentBrowser";
 import { Screen } from "../components/Screen";
 import { ordinal, pts } from "../format";
 import { gwRange, HorizonToggle, useHorizon } from "../horizon";
-import type { Position } from "../types";
+import { easeColour, fixturesFor } from "../analysis/ticker";
+import type { Position, Projections } from "../types";
 import { LeagueStatus, useLeague } from "../useLeague";
 
 const POSITION: Record<Position, { short: string; plural: string }> = {
@@ -71,7 +72,7 @@ export function Squad({ leagueId, entryId }: { leagueId: number; entryId: number
           <HorizonToggle value={horizon} onChange={setHorizon} />
         </div>
         <div className="card">
-          <TeamSheet rows={b.rows} gameweeks={b.gameweeks} clubs={new Map(projections.teams.map((t) => [t.id, t.short_name]))} />
+          <TeamSheet rows={b.rows} projections={projections} />
         </div>
       </section>
 
@@ -114,9 +115,14 @@ export function Squad({ leagueId, entryId }: { leagueId: number; entryId: number
   );
 }
 
-/** The Squad as a printed team sheet (docs/design.md §3): grouped by position,
- * a shirt-style number, the Player, "club · next fixture", and his Projection. */
-function TeamSheet({ rows, gameweeks, clubs }: { rows: SquadRow[]; gameweeks: number[]; clubs: Map<number, string> }) {
+/** The Squad as a printed team sheet (docs/design.md §3–4): grouped by
+ * position, a shirt-style number, the Player with his form (xG+xA per 90,
+ * starts in the last 6, last 6 scores) and next 3 Fixtures with difficulty,
+ * a Best XI or bench marker for the next gameweek, and his Projection. */
+function TeamSheet({ rows, projections }: { rows: SquadRow[]; projections: Projections }) {
+  const clubs = new Map(projections.teams.map((t) => [t.id, t.short_name]));
+  const next3 = projections.gameweeks.slice(0, 3);
+  const played = Math.min(6, projections.based_on_gameweek);
   let number = 0;
   return (
     <ul className="sheet" aria-label="Team sheet">
@@ -127,18 +133,37 @@ function TeamSheet({ rows, gameweeks, clubs }: { rows: SquadRow[]; gameweeks: nu
           <li key={`g${pos}`} className="group" aria-hidden="true">{POSITION[pos].plural}</li>,
           ...group.map((r) => {
             number += 1;
-            const next = r.cells[0];
-            const fixture = next?.opponents.length
-              ? next.opponents.map((o) => (o.home ? o.team.toUpperCase() : o.team.toLowerCase())).join(" + ")
-              : "no game";
+            const p = r.player;
+            const starts = r.cells[0]?.starter ?? false;
             const projection = r.cells.reduce((s, c) => s + c.points, 0);
+            const fixtures = fixturesFor(projections, p.team, p.position, next3);
             return (
-              <li key={r.player.id} className="sheet-row">
+              <li key={p.id} className={`sheet-row${starts ? "" : " bench"}`}>
                 <span className="num" aria-hidden="true">{number}</span>
                 <span className="who">
-                  <span><span className="name">{r.player.name}</span><StatusTag p={r.player} /></span>
-                  <span className="muted small">{clubs.get(r.player.team)} · GW{gameweeks[0]} {fixture}</span>
-                  {r.player.news && <span className="news">{r.player.news}</span>}
+                  <span>
+                    <span className="name">{p.name}</span> <span className="muted small">{clubs.get(p.team)}</span>
+                    <span className={`tag ${starts ? "xi" : "benched"}`}>{starts ? "XI" : "Bench"}</span>
+                    <StatusTag p={p} />
+                  </span>
+                  <span className="muted small form">
+                    xG+xA {(p.xg90 + p.xa90).toFixed(2)}/90 · starts {p.starts_recent}/{played}
+                  </span>
+                  <span className="form-row">
+                    <MiniBars scores={p.points_recent} />
+                    <span className="chips">
+                      {next3.map((gw) => {
+                        const fx = fixtures.filter((f) => f.gameweek === gw);
+                        return fx.length ? fx.map((f, i) => (
+                          <span key={`${gw}-${i}`} className="chip" style={{ background: easeColour(f.ease) }}
+                            aria-label={`GW${gw} ${f.home ? "home" : "away"} v ${f.opponent}, difficulty ${f.difficulty} of 5`}>
+                            {f.home ? f.opponent.toUpperCase() : f.opponent.toLowerCase()} {f.difficulty}
+                          </span>
+                        )) : <span key={gw} className="chip blank" aria-label={`GW${gw}: no game`}>–</span>;
+                      })}
+                    </span>
+                  </span>
+                  {p.news && <span className="news">{p.news}</span>}
                 </span>
                 <span className="proj" aria-label={`Projection ${pts(projection)}`}>{pts(projection)}</span>
               </li>
@@ -147,6 +172,20 @@ function TeamSheet({ rows, gameweeks, clubs }: { rows: SquadRow[]; gameweeks: nu
         ];
       })}
     </ul>
+  );
+}
+
+/** A Player's last 6 scores as tiny bars, with the scores as the text alternative. */
+function MiniBars({ scores }: { scores: number[] }) {
+  const max = Math.max(10, ...scores);
+  const w = 7, h = 20;
+  return (
+    <svg className="minibars" width={w * scores.length} height={h} role="img" aria-label={`Last ${scores.length} scores: ${scores.join(", ")}`}>
+      {scores.map((v, i) => {
+        const bh = Math.max(1.5, (Math.max(0, v) / max) * h);
+        return <rect key={i} x={i * w + 1} y={h - bh} width={w - 2} height={bh} className={v >= 6 ? "haul" : undefined} />;
+      })}
+    </svg>
   );
 }
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import projectionsJson from "../../tests/fixtures/projections.json";
 import type { Projections } from "../types";
-import { easeColour, fixtureTicker, type TickerMode } from "./ticker";
+import { difficulty, easeColour, fixturesFor, fixtureTicker, type TickerMode } from "./ticker";
 
 const projections = projectionsJson as unknown as Projections;
 
@@ -53,4 +53,41 @@ it("colours easy Fixtures blue and hard ones orange, never red against green", (
   expect(b1).toBeGreaterThan(r1);   // blue
   expect(r2).toBeGreaterThan(b2);   // orange
   expect(easeColour(1)).toBe("rgb(244,239,230)");
+});
+
+describe("difficulty", () => {
+  it("maps ease to 1 (easiest) through 5 (hardest)", () => {
+    expect([1.4, 1.15, 1.1, 1.0, 0.9, 0.85, 0.6].map(difficulty)).toEqual([1, 1, 2, 3, 4, 4, 5]);
+  });
+
+  it("never rates an easier Fixture harder", () => {
+    for (let e = 0.5; e < 1.6; e += 0.01) expect(difficulty(e + 0.01)).toBeLessThanOrEqual(difficulty(e));
+  });
+
+  it("spreads the recorded Fixtures across the scale", () => {
+    const seen = new Set(projections.fixtures.flatMap((f) => [f.home_attack!, f.away_defence!]).map(difficulty));
+    expect(seen.size).toBeGreaterThanOrEqual(4);
+  });
+});
+
+describe("fixturesFor", () => {
+  const f = projections.fixtures[0];
+
+  it("uses attack ease for forwards and defence ease for defenders", () => {
+    const fwd = fixturesFor(projections, f.home, 4, [f.gameweek])[0];
+    const def = fixturesFor(projections, f.home, 2, [f.gameweek])[0];
+    expect(fwd.ease).toBe(f.home_attack);
+    expect(def.ease).toBe(f.home_defence);
+    expect(fwd.home).toBe(true);
+    expect(fixturesFor(projections, f.away, 2, [f.gameweek])[0]).toMatchObject({ home: false, ease: f.away_defence });
+  });
+
+  it("blends for midfielders", () => {
+    const mid = fixturesFor(projections, f.home, 3, [f.gameweek])[0];
+    expect(mid.ease).toBeCloseTo(0.7 * f.home_attack! + 0.3 * f.home_defence!);
+  });
+
+  it("returns one Fixture per gameweek normally", () => {
+    expect(fixturesFor(projections, f.home, 3, projections.gameweeks.slice(0, 3))).toHaveLength(3);
+  });
 });
