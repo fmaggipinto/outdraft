@@ -218,3 +218,16 @@ tr.me td:first-child { box-shadow: inset 3px 0 0 var(--acc); }
 .wdl .d { background: var(--mute); opacity: 0.5; }
 .wdl .a { background: var(--mid); }
 .wdl-text { margin: 0; }
+
+/* Win-win trades */
+.trades { list-style: none; margin: 10px 0; padding: 0; }
+.trades li { padding: 10px 0; border-top: 1px solid var(--line); }
+.trades li:first-child { border-top: 0; }
+.trades li p { margin: 1px 0; }
+.trades .gains { margin-top: 4px; font-variant-numeric: tabular-nums; }
+.trades .gain { font-size: 14px; }
+.trades .their { font-weight: 700; color: var(--mid); }
+#trades-h + select, .title-row select {
+  padding: 6px 10px; border-radius: 10px; border: 1px solid var(--line);
+  background: var(--bg); color: var(--ink); font: inherit; max-width: 100%;
+}
