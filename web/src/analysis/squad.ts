@@ -6,6 +6,17 @@ export interface Opponent {
   home: boolean;
 }
 
+/** A lookup of a club's opponents in a gameweek: empty for a blank, two for a double. */
+export function opponentsIn(projections: Projections) {
+  const short = new Map(projections.teams.map((t) => [t.id, t.short_name]));
+  return (team: number, gw: number): Opponent[] =>
+    projections.fixtures
+      .filter((f) => f.gameweek === gw && (f.home === team || f.away === team))
+      .map((f) => (f.home === team
+        ? { team: short.get(f.away) ?? "?", home: true }
+        : { team: short.get(f.home) ?? "?", home: false }));
+}
+
 export interface SquadCell {
   gameweek: number;
   points: number;
@@ -36,14 +47,7 @@ export function squadBreakdown(manager: ManagerAnalysis, projections: Projection
   const n = Math.min(horizon, projections.gameweeks.length);
   const gameweeks = projections.gameweeks.slice(0, n);
   const players = new Map(projections.players.map((p) => [p.id, p]));
-  const short = new Map(projections.teams.map((t) => [t.id, t.short_name]));
-
-  const opponents = (team: number, gw: number): Opponent[] =>
-    projections.fixtures
-      .filter((f) => f.gameweek === gw && (f.home === team || f.away === team))
-      .map((f) => (f.home === team
-        ? { team: short.get(f.away) ?? "?", home: true }
-        : { team: short.get(f.home) ?? "?", home: false }));
+  const opponents = opponentsIn(projections);
 
   const rows = manager.squad.flatMap((id): SquadRow[] => {
     const player = players.get(id);

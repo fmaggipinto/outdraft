@@ -1,15 +1,17 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { LeagueAnalysis, ManagerAnalysis } from "../analysis/league";
 import {
   lockedOnWaivers, rivalInterest, TARGET_HORIZON, waiverPhase, waiverTargets, type Phase, type Rival, type WaiverTarget,
 } from "../analysis/waivers";
 import { useClaim } from "../claim";
 import { ClaimCard, YouTag } from "../components/ClaimCard";
+import { FreeAgentBrowser, StatusTag } from "../components/FreeAgentBrowser";
+import { PlayerCompare } from "../components/PlayerCompare";
 import { LeagueTabs } from "../components/LeagueTabs";
 import { fetchGame, fetchTransactions } from "../data";
 import { ordinal, pts, relative, when } from "../format";
 import { gwRange, useHorizon } from "../horizon";
-import type { ElementStatus, Game, ProjectedPlayer, Projections, Transactions } from "../types";
+import type { ElementStatus, Game, Projections, Transactions } from "../types";
 import { LeagueStatus, useLeague } from "../useLeague";
 
 const POS = { 1: "GKP", 2: "DEF", 3: "MID", 4: "FWD" } as const;
@@ -81,6 +83,8 @@ function WaiverView({ league, projections, manager, setClaim, game, transactions
   const transactionsKnown = transactions != null;
   const phase = waiverPhase(game, projections, Date.now());
   const locked = useMemo(() => lockedOnWaivers(status, transactions, nextGw), [status, transactions, nextGw]);
+  const [compare, setCompare] = useState<[number | null, number | null] | null>(null);
+  const compareRef = useRef<HTMLElement>(null);
   const targets = useMemo(
     () => (manager ? waiverTargets({ manager, status, projections, locked, phase }) : []),
     [manager, status, projections, locked, phase],
@@ -91,6 +95,12 @@ function WaiverView({ league, projections, manager, setClaim, game, transactions
       : new Map<number, Rival[]>()),
     [manager, league, status, projections, targets],
   );
+  // Compare your top Waiver target with the Player he'd replace, until you pick others.
+  const compareIds: [number | null, number | null] = compare ?? (targets[0] ? [targets[0].in.id, targets[0].out.id] : [null, null]);
+  const compareWith = (id: number) => {
+    setCompare([id, targets.find((t) => t.in.id === id)?.out.id ?? compareIds[1] ?? compareIds[0]]);
+    compareRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
   const event = projections.events.find((e) => e.gameweek === nextGw) ?? projections.events[0];
   const short = new Map(projections.teams.map((t) => [t.id, t.short_name]));
   const gws = gwRange(projections.gameweeks.slice(0, TARGET_HORIZON));
@@ -131,6 +141,8 @@ function WaiverView({ league, projections, manager, setClaim, game, transactions
         </section>
       )}
       <WaiverOrder league={league} me={manager?.entryId ?? null} />
+      <FreeAgentBrowser status={status} projections={projections} locked={locked} onCompare={compareWith} />
+      <PlayerCompare ref={compareRef} league={league} status={status} projections={projections} ids={compareIds} setIds={setCompare} />
     </>
   );
 }
@@ -210,11 +222,6 @@ function Target({ rank, t, short, phase, rivals }: {
       <span className="gain">+{pts(t.gain)}</span>
     </li>
   );
-}
-
-function StatusTag({ p }: { p: ProjectedPlayer }) {
-  const text = { d: "Doubt", i: "Injured", s: "Suspended", u: "Unavailable", n: "Unavailable" }[p.status];
-  return text ? <span className={`tag ${p.status === "d" ? "warn" : "bad"}`}>{text}</span> : null;
 }
 
 function WaiverOrder({ league, me }: { league: LeagueAnalysis; me: number | null }) {
