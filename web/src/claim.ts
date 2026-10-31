@@ -34,6 +34,12 @@ export function writeClaim(store: KeyValue | null, leagueId: number, entryId: nu
   }
 }
 
+/** Claim a Manager outside a screen, e.g. after finding a League by team ID. */
+export function claimManager(leagueId: number, entryId: number) {
+  writeClaim(storage(), leagueId, entryId);
+  dispatchEvent(new CustomEvent(EVENT, { detail: { leagueId, entryId } }));
+}
+
 /** [Claimed Manager's entry id or null, set or clear it]. */
 export function useClaim(leagueId: number): [number | null, (entryId: number | null) => void] {
   const [claim, setClaim] = useState(() => readClaim(storage(), leagueId));

@@ -5,7 +5,7 @@ test.beforeEach(({ page }) => serveRecorded(page));
 
 test("opens a League from Home and shows Squad strength and the table", async ({ page }) => {
   await page.goto("/");
-  await page.getByLabel("League ID").fill("5000");
+  await page.getByLabel("League ID", { exact: true }).fill("5000");
   await page.getByRole("button", { name: "Open League" }).click();
 
   await expect(page).toHaveURL(/\/league\/5000$/);
@@ -98,7 +98,7 @@ test("explains an unknown League ID", async ({ page }) => {
 
 test("rejects a League ID that isn't a number", async ({ page }) => {
   await page.goto("/");
-  await page.getByLabel("League ID").fill("my league");
+  await page.getByLabel("League ID", { exact: true }).fill("my league");
   await page.getByRole("button", { name: "Open League" }).click();
   await expect(page.getByText("A League ID is a number")).toBeVisible();
 });

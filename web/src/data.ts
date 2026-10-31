@@ -1,3 +1,4 @@
+import type { EntryPublic } from "./findLeague";
 import type { Distributions, ElementStatus, Game, LeagueDetails, Projections, Transactions } from "./types";
 
 // Published Model files are read straight from the repo (docs/data-format.md).
@@ -26,6 +27,11 @@ export const fetchGame = () => getJson<Game>("/api/fpl/game");
 
 export const fetchTransactions = (id: number) =>
   getJson<Transactions>(`/api/fpl/draft/league/${id}/transactions`);
+
+export const fetchEntryPublic = (entryId: number) =>
+  getJson<EntryPublic>(`/api/fpl/entry/${entryId}/public`);
+
+export const fetchLeagueDetails = (id: number) => getJson<LeagueDetails>(`/api/fpl/league/${id}/details`);
 
 export const fetchLeague = (id: number) =>
   Promise.all([

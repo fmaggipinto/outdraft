@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { navigate } from "./App";
 import { analyseLeague, type LeagueAnalysis } from "./analysis/league";
 import { fetchLeague, fetchProjections, NotFoundError } from "./data";
+import { rememberLeague } from "./recent";
 import type { ElementStatus, Projections } from "./types";
 
 export type LeagueState =
@@ -25,6 +26,7 @@ export function useLeague(id: number): [LeagueState, () => void] {
       .then(([[details, status], projections]) => {
         const ready = { kind: "ready" as const, league: analyseLeague(details, status, projections), projections, status };
         cache.set(id, ready);
+        rememberLeague({ id, name: ready.league.name });
         if (live) setState(ready);
       })
       .catch((e) => {
