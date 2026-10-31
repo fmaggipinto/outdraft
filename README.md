@@ -21,6 +21,18 @@ python -m outdraft_model --out ../data      # one run against the live FPL Draft
 pip install pytest && python -m pytest      # tests, on recorded API responses
 ```
 
+## Web app
+
+`web/` is the React + Vite app. It's deployed on Netlify (see `netlify.toml`), with a Netlify Function relaying the FPL Draft API. In development, Vite serves the same relay.
+
+```bash
+cd web
+npm install
+npm run dev        # http://localhost:5173, live FPL Draft data
+npm test           # unit tests: League analysis and relay
+npm run e2e        # Playwright smoke test on recorded data
+```
+
 ## Status
 
 Early planning. See the issues for the roadmap.

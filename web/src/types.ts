@@ -1,0 +1,63 @@
+// Shapes of the published Model files (docs/data-format.md) and of the
+// FPL Draft API responses the app reads through the relay.
+
+export type Position = 1 | 2 | 3 | 4;
+
+export interface SquadRules {
+  size: number;
+  play: number;
+  min_play: Record<string, number>;
+  max_play: Record<string, number>;
+}
+
+export interface ProjectedPlayer {
+  id: number;
+  name: string;
+  team: number;
+  position: Position;
+  status: string;
+  chance_next: number | null;
+  news: string;
+  projections: number[];
+}
+
+export interface Projections {
+  updated_at: string;
+  model_version: number;
+  based_on_gameweek: number;
+  gameweeks: number[];
+  events: { gameweek: number; deadline: string; waivers_deadline: string | null }[];
+  teams: { id: number; name: string; short_name: string }[];
+  squad_rules?: SquadRules;
+  players: ProjectedPlayer[];
+}
+
+export interface LeagueEntry {
+  id: number;        // league-entry id: used by standings and matches
+  entry_id: number;  // entry id: used by element-status owners
+  entry_name: string;
+  player_first_name: string;
+  player_last_name: string;
+  waiver_pick: number;
+}
+
+export interface Standing {
+  league_entry: number;
+  rank: number;
+  total: number;
+  event_total?: number;
+  matches_won?: number;
+  matches_drawn?: number;
+  matches_lost?: number;
+  points_for?: number;
+}
+
+export interface LeagueDetails {
+  league: { id: number; name: string; scoring: "c" | "h" };
+  league_entries: LeagueEntry[];
+  standings: Standing[];
+}
+
+export interface ElementStatus {
+  element_status: { element: number; owner: number | null; status: string }[];
+}

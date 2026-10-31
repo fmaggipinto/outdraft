@@ -29,6 +29,9 @@ def test_projections_cover_six_gameweeks_for_every_player(published, season):
     assert all(v >= 0 for x in p["players"] for v in x["projections"])
     assert [e["gameweek"] for e in p["events"]] == p["gameweeks"]
     assert len(p["teams"]) == 20
+    assert p["squad_rules"] == {"size": 15, "play": 11,
+                                "min_play": {"1": 1, "2": 3, "3": 2, "4": 1},
+                                "max_play": {"1": 1, "2": 5, "3": 5, "4": 3}}
 
 
 def test_projections_are_sane(published):
