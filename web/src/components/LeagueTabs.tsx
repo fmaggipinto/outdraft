@@ -6,6 +6,7 @@ const TABS = [
   { key: "matchups", label: "Matchups", path: "/matchups", h2hOnly: true },
   { key: "waivers", label: "Waivers", path: "/waivers", h2hOnly: false },
   { key: "trades", label: "Trades", path: "/trades", h2hOnly: false },
+  { key: "fixtures", label: "Fixtures", path: "/fixtures", h2hOnly: false },
 ] as const;
 
 export function LeagueTabs({ league, active, horizon }: {

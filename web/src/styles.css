@@ -174,8 +174,9 @@ tr.me td { background: var(--acc-soft); }
 tr.me td:first-child { box-shadow: inset 3px 0 0 var(--acc); }
 
 /* League section tabs */
-.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin: 0 0 14px; }
-.tabs a { padding: 8px 12px; text-decoration: none; color: var(--mute); font-weight: 600; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin: 0 0 14px; overflow-x: auto; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+.tabs a { flex: 0 0 auto; white-space: nowrap; padding: 8px 12px; text-decoration: none; color: var(--mute); font-weight: 600; border-bottom: 2px solid transparent; margin-bottom: -1px; }
 .tabs a.on { color: var(--ink); border-bottom-color: var(--acc); }
 
 /* Waivers */
@@ -273,3 +274,14 @@ table.cmp td.better { color: var(--acc); font-weight: 700; }
 .home .card + .card { margin-top: 0; }
 .choose { margin-top: 10px; border-top: 1px solid var(--line); padding-top: 8px; }
 button:disabled { opacity: 0.6; cursor: default; }
+
+/* Fixture ticker */
+table.ticker { border-collapse: separate; border-spacing: 2px; font-size: 11.5px; }
+table.ticker th, table.ticker td { padding: 0; border: 0; text-align: center; }
+table.ticker thead th { padding: 2px 0 4px; }
+table.ticker .club { position: sticky; left: 0; background: var(--card); padding-right: 6px; font-weight: 700; z-index: 1; }
+table.ticker td { min-width: 46px; vertical-align: middle; }
+table.ticker .fx { display: block; padding: 5px 2px; border-radius: 5px; color: var(--ink); font-weight: 600; }
+table.ticker td.double { display: flex; flex-direction: column; gap: 2px; }
+table.ticker td.double .fx { padding: 2px; }
+table.ticker td.blank .fx { background: var(--line); color: var(--mute); }

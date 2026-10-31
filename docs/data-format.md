@@ -36,7 +36,8 @@ The latest Projections for the next (up to) 6 gameweeks.
   "squad_rules": { "size": 15, "play": 11,
                    "min_play": { "1": 1, "2": 3, "3": 2, "4": 1 },
                    "max_play": { "1": 1, "2": 5, "3": 5, "4": 3 } },
-  "fixtures": [{ "gameweek": 10, "home": 9, "away": 7, "kickoff": "…" }],
+  "fixtures": [{ "gameweek": 10, "home": 9, "away": 7, "kickoff": "…",
+                 "home_attack": 1.13, "home_defence": 1.384, "away_attack": 0.595, "away_defence": 0.799 }],
   "players": [{
     "id": 1, "name": "Raya", "first_name": "David", "second_name": "Raya Martín",
     "team": 1, "position": 1, "status": "a", "chance_next": null, "news": "", "draft_rank": 40,
@@ -53,6 +54,7 @@ The latest Projections for the next (up to) 6 gameweeks.
 - `points_avg_capped`: points per finished gameweek with any single score capped at 10, so one haul doesn't dominate. Waiver targets use it to protect a Manager's consistent scorers from drop suggestions.
 - `status`: `a` available, `d` doubtful, `i` injured, `s` suspended, `u`/`n` unavailable.
 - `projections[i]` is the Projection for `gameweeks[i]`. It sums over all the Player's Fixtures that gameweek (a double gameweek counts twice, a blank gameweek is 0), and has injury status applied: 0 if unavailable, scaled by `chance_next` if doubtful.
+- `home_attack` and the other three ease fields say how easy the Fixture is for each side, with 1.0 as average and higher as easier. Attack ease comes from the opponent's defence, defence ease from the opponent's attack, both from this season's expected goals with home advantage. The fixture ticker uses them; it uses a fixed opponent effect, not the tuned one, so colours are comparable over time.
 - `fixtures` lists every Fixture in `gameweeks`. A club with two entries in a gameweek has a double, and a club with none has a blank.
 
 ## `distributions.json`
