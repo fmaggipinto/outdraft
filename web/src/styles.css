@@ -157,6 +157,22 @@ table.squad td.gw.starter .pts { color: var(--ink); font-weight: 700; }
 .tag.bad { background: var(--bad-soft); color: var(--err); }
 .news { display: block; font-size: 11.5px; color: var(--mute); line-height: 1.3; margin-top: 2px; }
 
+/* Claimed Manager */
+.claim { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; }
+.claim p { margin: 0; }
+.claim label { font-weight: 600; flex-basis: 100%; }
+.claim select {
+  flex: 1; min-width: 0; padding: 8px 10px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--bg); color: var(--ink); font: inherit;
+}
+.claim .muted.small { flex-basis: 100%; margin: 0; }
+.claim-actions { display: flex; gap: 6px; }
+.tag.you { background: var(--acc); color: var(--acc-ink); }
+h1 .tag.you { font-size: 12px; vertical-align: 4px; }
+.strength li.me { background: var(--acc-soft); margin: 0 -16px; padding-left: 16px; padding-right: 16px; border-radius: 8px; }
+tr.me td { background: var(--acc-soft); }
+tr.me td:first-child { box-shadow: inset 3px 0 0 var(--acc); }
+
 @media (max-width: 420px) {
   h1 { font-size: 21px; }
   .open-form .row { flex-direction: column; }

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "../App";
+import { useClaim } from "../claim";
 import type { Horizon, LeagueAnalysis, ManagerAnalysis } from "../analysis/league";
 import { ordinal, pts, relative, when } from "../format";
 import { gwRange, HorizonToggle, useHorizon } from "../horizon";
@@ -12,6 +13,7 @@ export const squadPath = (league: LeagueAnalysis, m: ManagerAnalysis, h: Horizon
 export function League({ id }: { id: number }) {
   const [state, retry] = useLeague(id);
   const [horizon, setHorizon] = useHorizon();
+  const [claim, setClaim] = useClaim(id);
 
   useEffect(() => {
     if (state.kind === "ready") document.title = `${state.league.name} · Outdraft`;
@@ -20,13 +22,16 @@ export function League({ id }: { id: number }) {
   if (state.kind !== "ready") return <LeagueStatus id={id} state={state} retry={retry} />;
 
   const { league, projections } = state;
+  // A claim for a Manager no longer in the League is ignored.
+  const me = league.managers.find((m) => m.entryId === claim)?.entryId ?? null;
   return (
     <>
       <LeagueHeader league={league} projections={projections} />
       {league.drafted ? (
         <>
-          <SquadStrength league={league} horizon={horizon} setHorizon={setHorizon} />
-          <LeagueTable league={league} horizon={horizon} />
+          <ClaimCard league={league} me={me} setClaim={setClaim} />
+          <SquadStrength league={league} horizon={horizon} setHorizon={setHorizon} me={me} />
+          <LeagueTable league={league} horizon={horizon} me={me} />
         </>
       ) : (
         <div className="card" role="status">
@@ -77,8 +82,54 @@ function LeagueHeader({ league, projections }: { league: LeagueAnalysis; project
   );
 }
 
-function SquadStrength({ league, horizon, setHorizon }: {
-  league: LeagueAnalysis; horizon: Horizon; setHorizon: (h: Horizon) => void;
+function ClaimCard({ league, me, setClaim }: {
+  league: LeagueAnalysis; me: number | null; setClaim: (entryId: number | null) => void;
+}) {
+  const [changing, setChanging] = useState(false);
+  const mine = league.managers.find((m) => m.entryId === me);
+
+  if (mine && !changing)
+    return (
+      <section className="card claim" aria-label="Your Manager">
+        <p>
+          You're <b>{mine.teamName}</b> <span className="tag you">You</span>
+        </p>
+        <div className="claim-actions">
+          <button className="ghost" onClick={() => setChanging(true)}>Change</button>
+          <button className="ghost" onClick={() => setClaim(null)}>Not me</button>
+        </div>
+      </section>
+    );
+
+  return (
+    <section className="card claim" aria-label="Your Manager">
+      <label htmlFor="claim-select">{mine ? "Which Manager are you?" : "Are you in this League?"}</label>
+      <select
+        id="claim-select"
+        value={mine?.entryId ?? ""}
+        onChange={(e) => {
+          setClaim(e.target.value ? Number(e.target.value) : null);
+          setChanging(false);
+        }}
+      >
+        <option value="">Choose your team…</option>
+        {[...league.managers].sort((a, b) => a.teamName.localeCompare(b.teamName)).map((m) => (
+          <option key={m.entryId} value={m.entryId}>{m.teamName} ({m.managerName})</option>
+        ))}
+      </select>
+      <p className="muted small">
+        Highlights you everywhere and, soon, powers your Waiver targets and Trades. Remembered on this device only.
+      </p>
+    </section>
+  );
+}
+
+function YouTag({ show }: { show: boolean }) {
+  return show ? <span className="tag you">You</span> : null;
+}
+
+function SquadStrength({ league, horizon, setHorizon, me }: {
+  league: LeagueAnalysis; horizon: Horizon; setHorizon: (h: Horizon) => void; me: number | null;
 }) {
   const rows = useMemo(
     () => [...league.managers].sort((a, b) => b.strength[horizon] - a.strength[horizon]),
@@ -102,11 +153,11 @@ function SquadStrength({ league, horizon, setHorizon }: {
           const floor = Math.max(0, min - (max - min) * 0.5);
           const width = max > floor ? 8 + ((m.strength[horizon] - floor) / (max - floor)) * 92 : 100;
           return (
-            <li key={m.entryId}>
+            <li key={m.entryId} className={m.entryId === me ? "me" : undefined}>
               <Link to={squadPath(league, m, horizon)} className="strength-row">
                 <span className="pos">{i + 1}</span>
                 <div className="who">
-                  <span className="team">{m.teamName}</span>
+                  <span className="team">{m.teamName} <YouTag show={m.entryId === me} /></span>
                   <span className="muted small">{m.managerName} · {ordinal(m.table.rank)} in table</span>
                   <span className="bar" style={{ width: `${width}%` }} />
                 </div>
@@ -120,7 +171,7 @@ function SquadStrength({ league, horizon, setHorizon }: {
   );
 }
 
-function LeagueTable({ league, horizon }: { league: LeagueAnalysis; horizon: Horizon }) {
+function LeagueTable({ league, horizon, me }: { league: LeagueAnalysis; horizon: Horizon; me: number | null }) {
   const h2h = league.format === "h2h";
   return (
     <section className="card" aria-labelledby="table-h">
@@ -149,10 +200,10 @@ function LeagueTable({ league, horizon }: { league: LeagueAnalysis; horizon: Hor
           </thead>
           <tbody>
             {league.managers.map((m) => (
-              <tr key={m.entryId}>
+              <tr key={m.entryId} className={m.entryId === me ? "me" : undefined}>
                 <td>{m.table.rank}</td>
                 <td className="left">
-                  <Link to={squadPath(league, m, horizon)} className="team">{m.teamName}</Link>
+                  <Link to={squadPath(league, m, horizon)} className="team">{m.teamName}</Link> <YouTag show={m.entryId === me} />
                   <span className="muted small block">{m.managerName}</span>
                 </td>
                 {h2h ? (
