@@ -3,9 +3,9 @@ import { winWinTrades, type Trade } from "../analysis/trades";
 import { TARGET_HORIZON } from "../analysis/waivers";
 import { useClaim } from "../claim";
 import { ClaimCard } from "../components/ClaimCard";
-import { LeagueTabs } from "../components/LeagueTabs";
+import { Screen } from "../components/Screen";
 import { pts } from "../format";
-import { gwRange, useHorizon } from "../horizon";
+import { gwRange } from "../horizon";
 import type { ProjectedPlayer } from "../types";
 import { LeagueStatus, useLeague } from "../useLeague";
 
@@ -15,7 +15,6 @@ const PER_RIVAL = 3;   // in the All rivals view, so one rival's variations don'
 
 export function Trades({ id }: { id: number }) {
   const [state, retry] = useLeague(id);
-  const [horizon] = useHorizon();
   const [claim, setClaim] = useClaim(id);
   const [rival, setRival] = useState<number | "all">("all");
 
@@ -29,7 +28,7 @@ export function Trades({ id }: { id: number }) {
     if (state.kind === "ready") document.title = `Trades · ${state.league.name} · Outdraft`;
   }, [state]);
 
-  if (state.kind !== "ready") return <LeagueStatus id={id} state={state} retry={retry} />;
+  if (state.kind !== "ready") return <LeagueStatus id={id} state={state} retry={retry} tab="trades" title="Trades" />;
   const { league, projections } = state;
   const short = new Map(projections.teams.map((t) => [t.id, t.short_name]));
   const perRival = new Map<number, number>();
@@ -42,11 +41,7 @@ export function Trades({ id }: { id: number }) {
   const rivals = league.managers.filter((m) => m.entryId !== manager?.entryId);
 
   return (
-    <>
-      <section className="league-head">
-        <h1>{league.name}</h1>
-      </section>
-      <LeagueTabs league={league} active="trades" horizon={horizon} />
+    <Screen title="Trades" kicker={league.name} projections={projections} league={{ id, tab: "trades", trades: league.trades }}>
       {!league.drafted ? (
         <div className="card" role="status"><p>{league.name} hasn't drafted yet.</p></div>
       ) : !manager ? (
@@ -92,7 +87,7 @@ export function Trades({ id }: { id: number }) {
           </p>
         </section>
       )}
-    </>
+    </Screen>
   );
 }
 

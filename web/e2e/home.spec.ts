@@ -18,7 +18,7 @@ test("finds a League from a team ID and claims that Manager", async ({ page }) =
   await page.getByLabel("Don't know your League ID? Use your team ID").fill(String(entry.entry.id));
   await page.getByRole("button", { name: "Find my League" }).click();
   await expect(page).toHaveURL(/\/league\/5000$/);
-  await expect(page.getByRole("region", { name: "Your Manager" })).toContainText("You're Team A");
+  await expect(page.getByRole("region", { name: "Squad strength" }).locator("li.me")).toContainText("Team A");
 });
 
 test("asks which League when a team is in several", async ({ page }) => {

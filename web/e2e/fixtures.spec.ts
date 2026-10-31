@@ -5,8 +5,8 @@ test.beforeEach(({ page }) => serveRecorded(page));
 
 test("shows a coloured fixture ticker that re-sorts for attackers and defenders", async ({ page }) => {
   await page.goto("/league/5000");
-  await page.getByRole("link", { name: "Fixtures" }).click();
-  await expect(page).toHaveURL(/\/league\/5000\/fixtures/);
+  await page.getByRole("navigation", { name: "League sections" }).getByRole("link", { name: "More", exact: true }).click();
+  await expect(page).toHaveURL(/\/league\/5000\/more/);
 
   const ticker = page.getByRole("region", { name: "Fixture ticker" });
   const clubs = ticker.getByRole("rowheader");

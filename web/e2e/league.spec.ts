@@ -1,7 +1,10 @@
-import { expect, test } from "@playwright/test";
-import { serveRecorded } from "./recorded";
+import { expect, test, type Page } from "@playwright/test";
+import { fixture, serveRecorded } from "./recorded";
 
 test.beforeEach(({ page }) => serveRecorded(page));
+
+const tab = (page: Page, name: string) =>
+  page.getByRole("navigation", { name: "League sections" }).getByRole("link", { name, exact: true });
 
 test("opens a League from Home and shows Squad strength and the table", async ({ page }) => {
   await page.goto("/");
@@ -9,7 +12,7 @@ test("opens a League from Home and shows Squad strength and the table", async ({
   await page.getByRole("button", { name: "Open League" }).click();
 
   await expect(page).toHaveURL(/\/league\/5000$/);
-  await expect(page.getByRole("heading", { name: "Test Classic League" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Test Classic League", level: 1 })).toBeVisible();
   const strength = page.getByRole("region", { name: "Squad strength" });
   await expect(strength.getByRole("listitem")).toHaveCount(8);
   await expect(page.getByRole("region", { name: "League table" }).getByRole("row")).toHaveCount(9);
@@ -22,25 +25,68 @@ test("opens a League from Home and shows Squad strength and the table", async ({
   expect(overflow).toBeLessThanOrEqual(0);
 });
 
-test("opens a Manager's Squad from the League screen and goes back", async ({ page }) => {
+test("has a bottom tab bar: League, Squad, Targets, Trades, More", async ({ page }) => {
+  await page.goto("/league/5000");
+  const links = page.getByRole("navigation", { name: "League sections" }).getByRole("link");
+  await expect(links).toHaveText(["League", "Squad", "Targets", "Trades", "More"]);
+  await expect(tab(page, "League")).toHaveAttribute("aria-current", "page");
+  // The header band shows the gameweek, last update and Model settings on every screen.
+  for (const [name, title] of [["Squad", /.+/], ["Targets", "Targets"], ["Trades", "Trades"], ["More", "More"]] as const) {
+    await tab(page, name).click();
+    await expect(tab(page, name)).toHaveAttribute("aria-current", "page");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(title);
+    await expect(page.getByRole("banner")).toContainText("Gameweek 10");
+    await expect(page.getByRole("banner")).toContainText(/Updated .+ · Model v1: xG weight \d/);
+  }
+});
+
+test("puts Fixtures in the Trades slot when a League has Trades off", async ({ page }) => {
+  await page.route("**/api/fpl/league/5000/details", (r) => {
+    const d = JSON.parse(fixture("classic-details.json"));
+    d.league.trades = "n";
+    return r.fulfill({ body: JSON.stringify(d), contentType: "application/json" });
+  });
+  await page.goto("/league/5000");
+  const links = page.getByRole("navigation", { name: "League sections" }).getByRole("link");
+  await expect(links).toHaveText(["League", "Squad", "Targets", "Fixtures", "More"]);
+  await tab(page, "Fixtures").click();
+  await expect(page.getByRole("region", { name: "Fixture ticker" })).toBeVisible();
+});
+
+test("sends addresses from before the new navigation to their new place", async ({ page }) => {
+  await page.goto("/league/5000/waivers");
+  await expect(page).toHaveURL(/\/league\/5000\/targets$/);
+  await page.goto("/league/5000/matchups");
+  await expect(page).toHaveURL(/\/league\/5000$/);
+});
+
+test("opens a Manager's Squad as a team sheet and goes back", async ({ page }) => {
   await page.goto("/league/5000?h=6");
   const first = page.getByRole("region", { name: "Squad strength" }).getByRole("link").first();
   const team = (await first.locator(".team").textContent())!;
   const strength = (await first.locator(".value").textContent())!;
   await first.click();
 
-  await expect(page).toHaveURL(/\/league\/5000\/manager\/\d+\?h=6$/);
+  await expect(page).toHaveURL(/\/league\/5000\/squad\/\d+\?h=6$/);
   await expect(page.getByRole("heading", { name: team, level: 1 })).toBeVisible();
+  await expect(tab(page, "Squad")).toHaveAttribute("aria-current", "page");
   await expect(page.getByRole("region", { name: /Squad strength/ })).toContainText(strength);
-  const squad = page.getByRole("region", { name: "Squad" });
-  await expect(squad.locator("tbody tr:not(.pos-row)")).toHaveCount(15);
-  await expect(squad.getByRole("rowheader", { name: "Goalkeepers" })).toBeVisible();
-  await expect(squad.getByRole("columnheader", { name: "GW15" })).toBeVisible();
+  const sheet = page.getByRole("list", { name: "Team sheet" });
+  await expect(sheet.locator(".sheet-row")).toHaveCount(15);
+  await expect(sheet).toContainText("Goalkeepers");
+  const grid = page.getByRole("region", { name: "Gameweek by gameweek" });
+  await expect(grid.getByRole("columnheader", { name: "GW15" })).toBeVisible();
+
+  // Pick another Manager from the selector.
+  const select = page.getByLabel("Manager");
+  const other = await select.locator("option").nth(1).getAttribute("value");
+  await select.selectOption(other!);
+  await expect(page).toHaveURL(new RegExp(`/squad/${other}`));
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
   expect(overflow).toBeLessThanOrEqual(0);
 
-  await page.getByRole("link", { name: "← Test Classic League" }).click();
+  await tab(page, "League").click();
   await expect(page).toHaveURL(/\/league\/5000\?h=6$/);
 });
 
@@ -53,27 +99,29 @@ test("claims a Manager per League, remembers it, and can clear it", async ({ pag
   await expect(page.locator(".me")).toHaveCount(0);
   await page.getByLabel("Are you in this League?").selectOption({ label: "Team C (Manager C)" });
 
-  const you = page.getByRole("region", { name: "Your Manager" });
-  await expect(you).toContainText("You're Team C");
-  await page.reload();
-  await expect(you).toContainText("You're Team C");
   const strengthMe = page.getByRole("region", { name: "Squad strength" }).locator("li.me");
+  await expect(strengthMe).toContainText("Team C");
+  await page.reload();
   await expect(strengthMe).toHaveCount(1);
   await expect(strengthMe).toContainText("Team C");
   await expect(page.getByRole("region", { name: "League table" }).locator("tr.me")).toContainText("Team C");
+  // Once claimed, the picker moves to More › Settings.
+  await expect(page.getByLabel("Are you in this League?")).toHaveCount(0);
+  await tab(page, "More").click();
+  await expect(page.getByRole("region", { name: "Your Manager" })).toContainText("You're Team C");
 
   // Another League has its own claim.
   await page.goto("/league/130000");
   await expect(page.getByLabel("Are you in this League?")).toBeVisible();
   await expect(page.locator(".me")).toHaveCount(0);
 
-  // The Squad screen shows the claim and can clear it.
+  // The Squad tab opens on the Claimed Manager and can clear the claim.
   await page.goto("/league/5000");
-  await strengthMe.getByRole("link").click();
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("You");
+  await tab(page, "Squad").click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Team C");
   await page.getByRole("button", { name: "Not me" }).click();
   await expect(page.getByRole("button", { name: "This is me" })).toBeVisible();
-  await page.getByRole("link", { name: "← Test Classic League" }).click();
+  await tab(page, "League").click();
   await expect(page.locator(".me")).toHaveCount(0);
 
   // The claim never leaves the browser: only League data is relayed.
@@ -81,7 +129,7 @@ test("claims a Manager per League, remembers it, and can clear it", async ({ pag
 });
 
 test("explains a Manager who isn't in the League", async ({ page }) => {
-  await page.goto("/league/5000/manager/1");
+  await page.goto("/league/5000/squad/1");
   await expect(page.getByRole("alert")).toContainText("isn't in this League");
 });
 
@@ -103,8 +151,8 @@ test("rejects a League ID that isn't a number", async ({ page }) => {
   await expect(page.getByText("A League ID is a number")).toBeVisible();
 });
 
-test("offers the deadlines calendar for Apple, Outlook and Google", async ({ page }) => {
-  await page.goto("/league/5000");
+test("offers the deadlines calendar for Apple, Outlook and Google under More", async ({ page }) => {
+  await page.goto("/league/5000/more");
   const host = new URL(page.url()).host;
   await expect(page.getByRole("link", { name: "Apple or Outlook Calendar" })).toHaveAttribute("href", `webcal://${host}/deadlines.ics`);
   await expect(page.getByRole("link", { name: "Google Calendar" })).toHaveAttribute(

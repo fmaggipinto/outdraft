@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, navigate } from "../App";
+import { Screen } from "../components/Screen";
 import { claimManager } from "../claim";
 import { fetchEntryPublic, fetchLeagueDetails, NotFoundError } from "../data";
 import { findLeagues, type FoundLeague } from "../findLeague";
@@ -10,11 +11,11 @@ const ID = /^\d{1,9}$/;
 export function Home() {
   const [recent, removeRecent] = useRecent();
   return (
+    <Screen title="Find your League" kicker="League analysis for FPL Draft">
     <section className="home">
-      <h1>See who's really strongest in your Draft League</h1>
       <p className="lede">
-        Squad strength for every Manager over the next 1, 3 or 6 gameweeks, from xG-based Projections.
-        No sign-in.
+        See who's really strongest in your Draft League: Squad strength for every Manager over the next 1, 3 or 6
+        gameweeks, from xG-based Projections. No sign-in.
       </p>
       {recent.length > 0 && (
         <section className="card" aria-labelledby="recent-h">
@@ -35,6 +36,7 @@ export function Home() {
       <LeagueIdForm />
       <TeamIdForm />
     </section>
+    </Screen>
   );
 }
 

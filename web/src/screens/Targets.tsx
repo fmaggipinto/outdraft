@@ -7,10 +7,10 @@ import { useClaim } from "../claim";
 import { ClaimCard, YouTag } from "../components/ClaimCard";
 import { FreeAgentBrowser, StatusTag } from "../components/FreeAgentBrowser";
 import { PlayerCompare } from "../components/PlayerCompare";
-import { LeagueTabs } from "../components/LeagueTabs";
+import { Screen } from "../components/Screen";
 import { fetchGame, fetchTransactions } from "../data";
 import { ordinal, pts, relative, when } from "../format";
-import { gwRange, useHorizon } from "../horizon";
+import { gwRange } from "../horizon";
 import type { ElementStatus, Game, Projections, Transactions } from "../types";
 import { LeagueStatus, useLeague } from "../useLeague";
 
@@ -19,9 +19,9 @@ const SHOWN = 10;
 
 type Extra = { kind: "loading" } | { kind: "error" } | { kind: "ready"; game: Game; transactions: Transactions | null };
 
-export function Waivers({ id }: { id: number }) {
+/** The Targets tab: Waiver targets with Rival interest, the Waiver order, Free agents and comparison. */
+export function Targets({ id }: { id: number }) {
   const [state, retry] = useLeague(id);
-  const [horizon] = useHorizon();
   const [claim, setClaim] = useClaim(id);
   const [extra, setExtra] = useState<Extra>({ kind: "loading" });
 
@@ -38,19 +38,15 @@ export function Waivers({ id }: { id: number }) {
   }, [id]);
 
   useEffect(() => {
-    if (state.kind === "ready") document.title = `Waivers · ${state.league.name} · Outdraft`;
+    if (state.kind === "ready") document.title = `Targets · ${state.league.name} · Outdraft`;
   }, [state]);
 
-  if (state.kind !== "ready") return <LeagueStatus id={id} state={state} retry={retry} />;
+  if (state.kind !== "ready") return <LeagueStatus id={id} state={state} retry={retry} tab="targets" title="Targets" />;
   const { league, projections, status } = state;
   const manager = league.managers.find((m) => m.entryId === claim);
 
   return (
-    <>
-      <section className="league-head">
-        <h1>{league.name}</h1>
-      </section>
-      <LeagueTabs league={league} active="waivers" horizon={horizon} />
+    <Screen title="Targets" kicker={league.name} projections={projections} league={{ id, tab: "targets", trades: league.trades }}>
       {!league.drafted ? (
         <div className="card" role="status"><p>{league.name} hasn't drafted yet.</p></div>
       ) : extra.kind === "loading" ? (
@@ -66,7 +62,7 @@ export function Waivers({ id }: { id: number }) {
           game={extra.game} transactions={extra.transactions} status={status}
         />
       )}
-    </>
+    </Screen>
   );
 }
 
@@ -115,7 +111,7 @@ function WaiverView({ league, projections, manager, setClaim, game, transactions
         </>
       ) : (
         <section className="card" aria-labelledby="targets-h">
-          <h2 id="targets-h">{phase === "free" ? "Free agent targets" : "Waiver targets"}</h2>
+          <h2 id="targets-h">{phase === "free" ? "Free-agent targets" : "Waiver targets"}</h2>
           <p className="muted">
             For <b>{manager.teamName}</b>: each swap is ranked by how much it raises your Squad strength over {gws}.
             {phase !== "free" && " Lower targets are backups if earlier ones are taken."}

@@ -42,6 +42,8 @@ export interface LeagueAnalysis {
   id: number;
   name: string;
   format: "classic" | "h2h";
+  /** Whether the League allows Trades (`league.trades`); the Trades tab is hidden if not. */
+  trades: boolean;
   drafted: boolean;
   gameweeks: number[];
   /** In League table order. */
@@ -120,6 +122,7 @@ export function analyseLeague(
     id: details.league.id,
     name: details.league.name,
     format: h2h ? "h2h" : "classic",
+    trades: details.league.trades !== "n",
     drafted: squads.size > 0,
     gameweeks: projections.gameweeks,
     managers,

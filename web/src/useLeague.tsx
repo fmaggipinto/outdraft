@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { navigate } from "./App";
 import { analyseLeague, type LeagueAnalysis } from "./analysis/league";
 import { fetchLeague, fetchProjections, isStale, leagueUrls, NotFoundError, projectionsUrl } from "./data";
+import { Screen } from "./components/Screen";
+import type { TabKey } from "./components/TabBar";
 import { rememberLeague } from "./recent";
 import type { ElementStatus, Projections } from "./types";
 
@@ -48,16 +50,23 @@ export function useLeague(id: number): [LeagueState, () => void] {
   return [state, () => { cache.delete(id); setAttempt((n) => n + 1); }];
 }
 
-/** Loading and error states shared by the League and Squad screens. */
-export function LeagueStatus({ id, state, retry }: { id: number; state: LeagueState; retry: () => void }) {
-  if (state.kind === "loading") return <p className="status" role="status">Loading League {id}…</p>;
-  if (state.kind !== "error") return null;
+/** Loading and error states shared by every League screen, inside the header band. */
+export function LeagueStatus({ id, state, retry, tab, title }: {
+  id: number; state: LeagueState; retry: () => void; tab: TabKey; title: string;
+}) {
+  if (state.kind === "ready") return null;
   return (
-    <div className="card status" role="alert">
-      <p>{state.message}</p>
-      {state.retry
-        ? <button onClick={retry}>Try again</button>
-        : <button onClick={() => navigate("/")}>Enter another League ID</button>}
-    </div>
+    <Screen title={title} kicker={`League ${id}`} league={{ id, tab, trades: true }}>
+      {state.kind === "loading" ? (
+        <p className="status" role="status">Loading League {id}…</p>
+      ) : (
+        <div className="card status" role="alert">
+          <p>{state.message}</p>
+          {state.retry
+            ? <button onClick={retry}>Try again</button>
+            : <button onClick={() => navigate("/")}>Enter another League ID</button>}
+        </div>
+      )}
+    </Screen>
   );
 }
