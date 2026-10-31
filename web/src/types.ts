@@ -23,6 +23,12 @@ export interface ProjectedPlayer {
   total_points: number;
   /** Missing from files published before the Model job added it. */
   points_avg_capped?: number;
+  first_name: string;
+  second_name: string;
+  starts_recent: number;
+  points_recent: number[];
+  xg90: number;
+  xa90: number;
   projections: number[];
 }
 

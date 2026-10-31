@@ -235,3 +235,31 @@ tr.me td:first-child { box-shadow: inset 3px 0 0 var(--acc); }
 /* Deadlines calendar */
 .calendar-links { margin: 8px 0 0; }
 button.link { background: none; border: 0; padding: 0; color: var(--acc); font: inherit; font-weight: 400; text-decoration: underline; cursor: pointer; }
+
+/* Free agents and comparison */
+.fa-filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 10px 0; }
+.fa-filters input[type="search"] {
+  flex: 1; min-width: 120px; padding: 6px 10px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--bg); color: var(--ink); font: inherit;
+}
+.fa-filters select, .cmp-pickers select {
+  padding: 6px 10px; border-radius: 10px; border: 1px solid var(--line);
+  background: var(--bg); color: var(--ink); font: inherit; max-width: 100%;
+}
+.fa-list { list-style: none; margin: 0 0 10px; padding: 0; }
+.fa-list li { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); }
+.fa-list li:first-child { border-top: 0; }
+.fa-list .who { display: flex; flex-direction: column; min-width: 0; }
+.fa-list .team { font-weight: 700; }
+.fa-list .tag { margin-left: 6px; }
+.fa-list .value { font-weight: 700; font-variant-numeric: tabular-nums; }
+.small-btn { padding: 4px 8px; font-size: 12.5px; }
+.cmp-pickers { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; margin: 10px 0; }
+.cmp-pickers select { width: 100%; min-width: 0; }
+table.cmp { table-layout: fixed; }
+table.cmp th, table.cmp td { white-space: normal; vertical-align: top; }
+table.cmp thead th { color: var(--ink); font-size: 14px; }
+table.cmp tbody th { text-align: center; font-weight: 400; width: 30%; }
+table.cmp .right { text-align: right; }
+table.cmp td.better { color: var(--acc); font-weight: 700; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
