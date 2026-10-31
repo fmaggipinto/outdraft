@@ -5,7 +5,7 @@ test.beforeEach(({ page }) => serveRecorded(page));
 
 test("suggests Win-win trades for the Claimed Manager and filters by rival", async ({ page }) => {
   await page.goto("/league/5000");
-  await page.getByRole("link", { name: "Trades" }).click();
+  await page.getByRole("navigation", { name: "League sections" }).getByRole("link", { name: "Trades", exact: true }).click();
   await expect(page).toHaveURL(/\/league\/5000\/trades/);
   await expect(page.getByText("Claim your Manager to see Win-win trades.")).toBeVisible();
 

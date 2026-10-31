@@ -35,6 +35,8 @@ export interface ProjectedPlayer {
 export interface Projections {
   updated_at: string;
   model_version: number;
+  /** Tuned Model settings: xG weight w, opponent effect k, backtest fit. */
+  params?: { w: number; k: number; corr?: number; tuned_at?: number };
   based_on_gameweek: number;
   gameweeks: number[];
   events: { gameweek: number; deadline: string; waivers_deadline: string | null }[];
@@ -85,7 +87,7 @@ export interface Match {
 }
 
 export interface LeagueDetails {
-  league: { id: number; name: string; scoring: "c" | "h" };
+  league: { id: number; name: string; scoring: "c" | "h"; trades?: string };
   league_entries: LeagueEntry[];
   standings: Standing[];
   /** Head-to-head only: the whole season's Matchups. */

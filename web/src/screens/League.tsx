@@ -1,18 +1,19 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { Link } from "../App";
-import { useClaim } from "../claim";
-import { CalendarLinks } from "../components/CalendarLinks";
-import { ClaimCard, YouTag } from "../components/ClaimCard";
-import { LeagueTabs } from "../components/LeagueTabs";
 import type { Horizon, LeagueAnalysis, ManagerAnalysis } from "../analysis/league";
+import { useClaim } from "../claim";
+import { ClaimCard, YouTag } from "../components/ClaimCard";
+import { MatchupsSection } from "../components/MatchupsSection";
+import { Screen } from "../components/Screen";
 import { ordinal, pts, relative, when } from "../format";
 import { gwRange, HorizonToggle, useHorizon } from "../horizon";
 import type { Projections } from "../types";
 import { LeagueStatus, useLeague } from "../useLeague";
 
 export const squadPath = (league: LeagueAnalysis, m: ManagerAnalysis, h: Horizon) =>
-  `/league/${league.id}/manager/${m.entryId}?h=${h}`;
+  `/league/${league.id}/squad/${m.entryId}?h=${h}`;
 
+/** The League tab (home): table, this gameweek's Matchups, Squad strength. */
 export function League({ id }: { id: number }) {
   const [state, retry] = useLeague(id);
   const [horizon, setHorizon] = useHorizon();
@@ -22,68 +23,47 @@ export function League({ id }: { id: number }) {
     if (state.kind === "ready") document.title = `${state.league.name} · Outdraft`;
   }, [state]);
 
-  if (state.kind !== "ready") return <LeagueStatus id={id} state={state} retry={retry} />;
+  if (state.kind !== "ready") return <LeagueStatus id={id} state={state} retry={retry} tab="league" title="League" />;
 
   const { league, projections } = state;
   // A claim for a Manager no longer in the League is ignored.
   const me = league.managers.find((m) => m.entryId === claim)?.entryId ?? null;
+  const kicker = `${league.format === "h2h" ? "Head-to-head" : "Classic"} · ${league.managers.length} Manager${league.managers.length === 1 ? "" : "s"}`;
   return (
-    <>
-      <LeagueHeader league={league} projections={projections} />
-      <LeagueTabs league={league} active="league" horizon={horizon} />
+    <Screen title={league.name} kicker={kicker} projections={projections} league={{ id, tab: "league", trades: league.trades }}>
+      <Deadlines projections={projections} />
       {league.drafted ? (
         <>
-          <ClaimCard league={league} me={me} setClaim={setClaim} />
-          <SquadStrength league={league} horizon={horizon} setHorizon={setHorizon} me={me} />
+          {me == null && <ClaimCard league={league} me={me} setClaim={setClaim} />}
           <LeagueTable league={league} horizon={horizon} me={me} />
+          {league.format === "h2h" && <MatchupsSection league={league} me={me} />}
+          <SquadStrength league={league} horizon={horizon} setHorizon={setHorizon} me={me} />
         </>
       ) : (
         <div className="card" role="status">
           <p>{league.name} hasn't drafted yet. Squad strength appears once every Manager has a Squad.</p>
         </div>
       )}
-    </>
+    </Screen>
   );
 }
 
-function LeagueHeader({ league, projections }: { league: LeagueAnalysis; projections: Projections }) {
+function Deadlines({ projections }: { projections: Projections }) {
   const next = projections.events[0];
-  const [copied, setCopied] = useState(false);
-  const share = async () => {
-    const url = location.href;
-    if (navigator.share) await navigator.share({ title: league.name, url }).catch(() => {});
-    else {
-      await navigator.clipboard?.writeText(url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
+  if (!next) return null;
   return (
-    <section className="league-head">
-      <div className="title-row">
-        <h1>{league.name}</h1>
-        <button className="ghost" onClick={share}>{copied ? "Link copied" : "Share"}</button>
-      </div>
-      <p className="muted">
-        {league.format === "h2h" ? "Head-to-head" : "Classic"} · {league.managers.length} Manager{league.managers.length === 1 ? "" : "s"} ·
-        Projections updated {relative(projections.updated_at)}, using data to GW{projections.based_on_gameweek}
-      </p>
-      {next && (
-        <dl className="deadlines">
-          {next.waivers_deadline && (
-            <div>
-              <dt>GW{next.gameweek} Waiver deadline</dt>
-              <dd>{when(next.waivers_deadline)} <span className="muted">({relative(next.waivers_deadline)})</span></dd>
-            </div>
-          )}
-          <div>
-            <dt>GW{next.gameweek} Gameweek deadline</dt>
-            <dd>{when(next.deadline)} <span className="muted">({relative(next.deadline)})</span></dd>
-          </div>
-        </dl>
+    <dl className="deadlines">
+      {next.waivers_deadline && (
+        <div>
+          <dt>GW{next.gameweek} Waiver deadline</dt>
+          <dd>{when(next.waivers_deadline)} <span className="muted">({relative(next.waivers_deadline)})</span></dd>
+        </div>
       )}
-      <CalendarLinks />
-    </section>
+      <div>
+        <dt>GW{next.gameweek} Gameweek deadline</dt>
+        <dd>{when(next.deadline)} <span className="muted">({relative(next.deadline)})</span></dd>
+      </div>
+    </dl>
   );
 }
 
@@ -97,35 +77,37 @@ function SquadStrength({ league, horizon, setHorizon, me }: {
   const max = rows[0]?.strength[horizon] || 1;
   const min = Math.min(...rows.map((m) => m.strength[horizon]));
   return (
-    <section className="card" aria-labelledby="strength-h">
-      <div className="title-row">
+    <section aria-labelledby="strength-h">
+      <div className="section-head">
         <h2 id="strength-h">Squad strength</h2>
         <HorizonToggle value={horizon} onChange={setHorizon} />
       </div>
-      <p className="muted">
-        Best XI Projections summed over {gwRange(league.gameweeks.slice(0, horizon))}, with today's Squads and
-        optimal lineups. It shows each Squad's potential, not what its Manager will do. Tap a Manager to see their Squad.
-      </p>
-      <ol className="strength">
-        {rows.map((m, i) => {
-          // Bars start a little below the weakest Squad so differences are visible.
-          const floor = Math.max(0, min - (max - min) * 0.5);
-          const width = max > floor ? 8 + ((m.strength[horizon] - floor) / (max - floor)) * 92 : 100;
-          return (
-            <li key={m.entryId} className={m.entryId === me ? "me" : undefined}>
-              <Link to={squadPath(league, m, horizon)} className="strength-row">
-                <span className="pos">{i + 1}</span>
-                <div className="who">
-                  <span className="team">{m.teamName} <YouTag show={m.entryId === me} /></span>
-                  <span className="muted small">{m.managerName} · {ordinal(m.table.rank)} in table</span>
-                  <span className="bar" style={{ width: `${width}%` }} />
-                </div>
-                <span className="value">{pts(m.strength[horizon])}</span>
-              </Link>
-            </li>
-          );
-        })}
-      </ol>
+      <div className="card">
+        <p className="muted small">
+          Best XI Projections summed over {gwRange(league.gameweeks.slice(0, horizon))}, with today's Squads and
+          optimal lineups. It shows each Squad's potential, not what its Manager will do. Tap a Manager to see their Squad.
+        </p>
+        <ol className="strength">
+          {rows.map((m, i) => {
+            // Bars start a little below the weakest Squad so differences are visible.
+            const floor = Math.max(0, min - (max - min) * 0.5);
+            const width = max > floor ? 8 + ((m.strength[horizon] - floor) / (max - floor)) * 92 : 100;
+            return (
+              <li key={m.entryId} className={m.entryId === me ? "me" : undefined}>
+                <Link to={squadPath(league, m, horizon)} className="strength-row">
+                  <span className="pos">{i + 1}</span>
+                  <div className="who">
+                    <span className="team">{m.teamName} <YouTag show={m.entryId === me} /></span>
+                    <span className="muted small">{m.managerName} · {ordinal(m.table.rank)} in table</span>
+                    <span className="bar" style={{ width: `${width}%` }} />
+                  </div>
+                  <span className="value">{pts(m.strength[horizon])}</span>
+                </Link>
+              </li>
+            );
+          })}
+        </ol>
+      </div>
     </section>
   );
 }
@@ -133,56 +115,60 @@ function SquadStrength({ league, horizon, setHorizon, me }: {
 function LeagueTable({ league, horizon, me }: { league: LeagueAnalysis; horizon: Horizon; me: number | null }) {
   const h2h = league.format === "h2h";
   return (
-    <section className="card" aria-labelledby="table-h">
-      <h2 id="table-h">League table</h2>
-      <div className="scroll">
-        <table>
-          <thead>
-            <tr>
-              <th scope="col">#</th>
-              <th scope="col" className="left">Manager</th>
-              {h2h ? (
-                <>
-                  <th scope="col" title="Won">W</th>
-                  <th scope="col" title="Drawn">D</th>
-                  <th scope="col" title="Lost">L</th>
-                  <th scope="col" title="Points scored">For</th>
-                  <th scope="col">Pts</th>
-                </>
-              ) : (
-                <>
-                  <th scope="col" title="Points this gameweek">GW</th>
-                  <th scope="col">Total</th>
-                </>
-              )}
-            </tr>
-          </thead>
-          <tbody>
-            {league.managers.map((m) => (
-              <tr key={m.entryId} className={m.entryId === me ? "me" : undefined}>
-                <td>{m.table.rank}</td>
-                <td className="left">
-                  <Link to={squadPath(league, m, horizon)} className="team">{m.teamName}</Link> <YouTag show={m.entryId === me} />
-                  <span className="muted small block">{m.managerName}</span>
-                </td>
+    <section aria-labelledby="table-h">
+      <div className="section-head">
+        <h2 id="table-h">League table</h2>
+      </div>
+      <div className="card">
+        <div className="scroll">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col" className="left">Manager</th>
                 {h2h ? (
                   <>
-                    <td>{m.table.won ?? "–"}</td>
-                    <td>{m.table.drawn ?? "–"}</td>
-                    <td>{m.table.lost ?? "–"}</td>
-                    <td>{m.table.pointsFor ?? "–"}</td>
-                    <td className="strong">{m.table.total}</td>
+                    <th scope="col" title="Won">W</th>
+                    <th scope="col" title="Drawn">D</th>
+                    <th scope="col" title="Lost">L</th>
+                    <th scope="col" title="Points scored">For</th>
+                    <th scope="col">Pts</th>
                   </>
                 ) : (
                   <>
-                    <td>{m.table.gameweekPoints ?? "–"}</td>
-                    <td className="strong">{m.table.total}</td>
+                    <th scope="col" title="Points this gameweek">GW</th>
+                    <th scope="col">Total</th>
                   </>
                 )}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {league.managers.map((m) => (
+                <tr key={m.entryId} className={m.entryId === me ? "me" : undefined}>
+                  <td>{m.table.rank}</td>
+                  <td className="left">
+                    <Link to={squadPath(league, m, horizon)} className="team">{m.teamName}</Link> <YouTag show={m.entryId === me} />
+                    <span className="muted small block">{m.managerName}</span>
+                  </td>
+                  {h2h ? (
+                    <>
+                      <td>{m.table.won ?? "–"}</td>
+                      <td>{m.table.drawn ?? "–"}</td>
+                      <td>{m.table.lost ?? "–"}</td>
+                      <td>{m.table.pointsFor ?? "–"}</td>
+                      <td className="strong">{m.table.total}</td>
+                    </>
+                  ) : (
+                    <>
+                      <td>{m.table.gameweekPoints ?? "–"}</td>
+                      <td className="strong">{m.table.total}</td>
+                    </>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
   );

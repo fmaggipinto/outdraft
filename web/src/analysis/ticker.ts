@@ -37,11 +37,13 @@ export function fixtureTicker(projections: Projections, mode: TickerMode): Ticke
   return rows.sort((a, b) => b.run - a.run || a.team.short_name.localeCompare(b.team.short_name));
 }
 
-/** A cell colour from red (hard) through neutral to green (easy). */
-export function easeColour(ease: number, dark: boolean): string {
+/** A cell colour from orange (hard) through paper to blue (easy): never red
+ * against green (docs/design.md). Light tints in both themes, so the cell
+ * text is always dark ink. */
+export function easeColour(ease: number): string {
   const t = Math.max(-1, Math.min(1, (ease - 1) / 0.35));
-  const base = dark ? [42, 50, 46] : [245, 245, 240];
-  const target = t > 0 ? (dark ? [47, 140, 90] : [81, 207, 102]) : (dark ? [170, 60, 55] : [255, 107, 107]);
+  const base = [244, 239, 230];
+  const target = t > 0 ? [143, 182, 228] : [240, 172, 104];
   const s = Math.abs(t);
   return `rgb(${base.map((c, i) => Math.round(c + (target[i] - c) * s)).join(",")})`;
 }

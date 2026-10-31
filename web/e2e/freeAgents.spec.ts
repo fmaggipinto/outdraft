@@ -8,7 +8,7 @@ const owned = new Set(status.filter((e) => e.owner != null).map((e) => e.element
 test.beforeEach(({ page }) => serveRecorded(page));
 
 test("browses Free agents by position, search and sort", async ({ page }) => {
-  await page.goto("/league/5000/waivers");
+  await page.goto("/league/5000/targets");
   const card = page.getByRole("region", { name: "Free agents" });
   const rows = card.getByRole("listitem");
   await expect(rows).toHaveCount(25);
@@ -36,7 +36,7 @@ test("browses Free agents by position, search and sort", async ({ page }) => {
 });
 
 test("compares any two Players, owned or not", async ({ page }) => {
-  await page.goto("/league/5000/waivers");
+  await page.goto("/league/5000/targets");
   const first = page.getByRole("region", { name: "Free agents" }).getByRole("listitem").first();
   const name = (await first.locator(".team").textContent())!;
   await first.getByRole("button", { name: `Compare ${name}` }).click();

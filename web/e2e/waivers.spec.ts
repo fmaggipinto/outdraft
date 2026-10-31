@@ -10,8 +10,8 @@ test("shows Waiver targets and the Waiver order for the Claimed Manager", async 
   await page.clock.setFixedTime(beforeWaivers);
   await serveRecorded(page);
   await page.goto("/league/5000");
-  await page.getByRole("link", { name: "Waivers" }).click();
-  await expect(page).toHaveURL(/\/league\/5000\/waivers/);
+  await page.getByRole("navigation", { name: "League sections" }).getByRole("link", { name: "Targets", exact: true }).click();
+  await expect(page).toHaveURL(/\/league\/5000\/targets/);
 
   await expect(page.getByRole("region", { name: "Waiver phase" })).toContainText("Waiver claims for GW10");
   await expect(page.getByText("Claim your Manager to see your Waiver targets.")).toBeVisible();
@@ -36,11 +36,11 @@ test("shows Waiver targets and the Waiver order for the Claimed Manager", async 
 test("switches to Free agent signings once waivers are processed", async ({ page }) => {
   await page.clock.setFixedTime(afterWaivers);
   await serveRecorded(page, { waivers_processed: true });
-  await page.goto("/league/5000/waivers");
+  await page.goto("/league/5000/targets");
   await page.getByLabel("Are you in this League?").selectOption({ label: "Team C (Manager C)" });
 
   await expect(page.getByRole("region", { name: "Waiver phase" })).toContainText("Waivers for GW10 are done");
-  const targets = page.getByRole("region", { name: "Free agent targets" });
+  const targets = page.getByRole("region", { name: "Free-agent targets" });
   await expect(targets.getByRole("listitem").first()).toContainText("Sign");
   await expect(targets).not.toContainText("On waivers");
   // The Waiver order no longer matters, so no ahead/behind flags or Contested tags.
@@ -51,6 +51,6 @@ test("switches to Free agent signings once waivers are processed", async ({ page
 test("says when waivers are being processed", async ({ page }) => {
   await page.clock.setFixedTime(afterWaivers);
   await serveRecorded(page, { waivers_processed: false });
-  await page.goto("/league/5000/waivers");
+  await page.goto("/league/5000/targets");
   await expect(page.getByRole("region", { name: "Waiver phase" })).toContainText("FPL is processing claims");
 });

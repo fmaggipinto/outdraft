@@ -46,11 +46,11 @@ it("shows a double gameweek as two Fixtures and a blank as none", () => {
   expect(double.run).toBeCloseTo(single.run + first.home_attack!);
 });
 
-it("colours easy Fixtures green and hard ones red", () => {
+it("colours easy Fixtures blue and hard ones orange, never red against green", () => {
   const rgb = (s: string) => s.match(/\d+/g)!.map(Number);
-  const [r1, g1] = rgb(easeColour(1.4, false));
-  const [r2, g2] = rgb(easeColour(0.6, false));
-  expect(g1).toBeGreaterThan(r1);
-  expect(r2).toBeGreaterThan(g2);
-  expect(easeColour(1, false)).toBe("rgb(245,245,240)");
+  const [r1, , b1] = rgb(easeColour(1.4));
+  const [r2, , b2] = rgb(easeColour(0.6));
+  expect(b1).toBeGreaterThan(r1);   // blue
+  expect(r2).toBeGreaterThan(b2);   // orange
+  expect(easeColour(1)).toBe("rgb(244,239,230)");
 });
