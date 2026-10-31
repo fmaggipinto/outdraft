@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { Link } from "../App";
+import { useClaim } from "../claim";
 import { squadBreakdown, type SquadCell, type SquadRow } from "../analysis/squad";
 import { ordinal, pts } from "../format";
 import { gwRange, HorizonToggle, useHorizon } from "../horizon";
@@ -16,6 +17,7 @@ const POSITION: Record<Position, { short: string; plural: string }> = {
 export function Squad({ leagueId, entryId }: { leagueId: number; entryId: number }) {
   const [state, retry] = useLeague(leagueId);
   const [horizon, setHorizon] = useHorizon();
+  const [claim, setClaim] = useClaim(leagueId);
   const manager = state.kind === "ready" ? state.league.managers.find((m) => m.entryId === entryId) : undefined;
 
   useEffect(() => {
@@ -44,7 +46,12 @@ export function Squad({ leagueId, entryId }: { leagueId: number; entryId: number
     <>
       {back}
       <section className="league-head">
-        <h1>{manager.teamName}</h1>
+        <div className="title-row">
+          <h1>{manager.teamName} {claim === entryId && <span className="tag you">You</span>}</h1>
+          {claim === entryId
+            ? <button className="ghost" onClick={() => setClaim(null)}>Not me</button>
+            : <button className="ghost" onClick={() => setClaim(entryId)}>This is me</button>}
+        </div>
         <p className="muted">
           {manager.managerName} · {ordinal(manager.table.rank)} in the table · {ordinal(strengthRank)} for Squad strength
         </p>
