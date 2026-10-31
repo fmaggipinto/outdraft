@@ -55,6 +55,29 @@ The latest Projections for the next (up to) 6 gameweeks.
 - `projections[i]` is the Projection for `gameweeks[i]`. It sums over all the Player's Fixtures that gameweek (a double gameweek counts twice, a blank gameweek is 0), and has injury status applied: 0 if unavailable, scaled by `chance_next` if doubtful.
 - `fixtures` lists every Fixture in `gameweeks`. A club with two entries in a gameweek has a double, and a club with none has a blank.
 
+## `distributions.json`
+
+Score distributions for the same gameweeks as `projections.json`, used for Head-to-head Win probability.
+
+```json
+{
+  "updated_at": "…",
+  "model_version": 1,
+  "gameweeks": [10, 11, 12, 13, 14, 15],
+  "players": {
+    "1": [[[0, 2, 6, 10], [0.1, 0.62, 0.23, 0.05]], "…one entry per gameweek"]
+  }
+}
+```
+
+- Each gameweek's entry is `[points, probabilities]`: the possible scores, and the chance of each. Probabilities are rounded to 3 decimals and sum to 1. Each distribution's average is the Player's Projection, up to that rounding.
+- Players projected 0 in every gameweek are left out: they always score 0.
+- v1 shape, per Fixture:
+  - the Player doesn't play (0 points), with probability one minus his expected share of minutes;
+  - otherwise he scores 2 plus a Poisson number of returns, each worth 4 points (5 for a midfielder);
+  - a double gameweek combines two Fixtures, and a blank gameweek is always 0.
+  - Players are treated as independent.
+
 ## `snapshots/gwNN.json`
 
 One file per gameweek, frozen at its Gameweek deadline.

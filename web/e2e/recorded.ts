@@ -9,6 +9,7 @@ export async function serveRecorded(page: Page, game: Record<string, unknown> = 
   const leagues: Record<string, string> = { "5000": "classic", "130000": "h2h" };
   const json = { contentType: "application/json" };
   await page.route("**/data/projections.json", (r) => r.fulfill({ body: fixture("projections.json"), ...json }));
+  await page.route("**/data/distributions.json", (r) => r.fulfill({ body: fixture("distributions.json"), ...json }));
   await page.route("**/api/fpl/game", (r) =>
     r.fulfill({ body: JSON.stringify({ ...JSON.parse(fixture("game.json")), ...game }), ...json }));
   await page.route("**/api/fpl/draft/league/*/transactions", (r) => {

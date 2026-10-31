@@ -202,21 +202,32 @@ class XgModel:
                 total += self.fixture_value(r, opp, home, w, k, upto)
         return total
 
+    def status_scale(self, pid):
+        """Chance he's available: 0 if injured/suspended, the stated chance if doubtful."""
+        e = self.el[pid]
+        st = e.get("status") or "a"
+        if st in UNAVAILABLE:
+            return 0.0
+        if st == "d":
+            ch = e.get("chance_of_playing_next_round")
+            return ch / 100 if isinstance(ch, (int, float)) else 0.5
+        return 1.0
+
     def projections(self, gws, params):
         """{Player id: [Projection per gameweek in gws]}, with injury status applied."""
         w, k = params["w"], params["k"]
-        out = {}
-        for pid, e in self.el.items():
-            st = e.get("status") or "a"
-            if st in UNAVAILABLE:
-                scale = 0.0
-            elif st == "d":
-                ch = e.get("chance_of_playing_next_round")
-                scale = ch / 100 if isinstance(ch, (int, float)) else 0.5
-            else:
-                scale = 1.0
-            out[pid] = [self.value(pid, self.last, [gw], w, k) * scale for gw in gws]
-        return out
+        return {pid: [self.value(pid, self.last, [gw], w, k) * self.status_scale(pid) for gw in gws]
+                for pid in self.el}
+
+    def fixture_parts(self, pid, gw, params):
+        """[(chance of playing, expected points if he plays)] for each of his
+        Fixtures in `gw`. Their q * m sum to his Projection."""
+        r = self.rates(pid, self.last)
+        if not r or r["avail"] <= 0:
+            return []
+        q = r["avail"] * self.status_scale(pid)
+        return [(q, self.fixture_value(r, opp, home, params["w"], params["k"]) / r["avail"])
+                for opp, home in self.fx.get(r["team"], {}).get(gw, [])]
 
     def backtest(self):
         """Try each (w, k); return list of (corr, mae, n, w, k), best first."""

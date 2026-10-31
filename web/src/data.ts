@@ -1,4 +1,4 @@
-import type { ElementStatus, Game, LeagueDetails, Projections, Transactions } from "./types";
+import type { Distributions, ElementStatus, Game, LeagueDetails, Projections, Transactions } from "./types";
 
 // Published Model files are read straight from the repo (docs/data-format.md).
 export const DATA_URL =
@@ -19,6 +19,8 @@ async function getJson<T>(url: string): Promise<T> {
 }
 
 export const fetchProjections = () => getJson<Projections>(DATA_URL + "projections.json");
+
+export const fetchDistributions = () => getJson<Distributions>(DATA_URL + "distributions.json");
 
 export const fetchGame = () => getJson<Game>("/api/fpl/game");
 
