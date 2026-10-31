@@ -124,8 +124,9 @@ test("claims a Manager per League, remembers it, and can clear it", async ({ pag
   await tab(page, "League").click();
   await expect(page.locator(".me")).toHaveCount(0);
 
-  // The claim never leaves the browser: only public League data, lineups and histories are relayed.
-  expect(relayed.every((p) => /^\/api\/fpl\/(league\/\d+\/(details|element-status)|entry\/\d+\/(event\/\d+|history))$/.test(p))).toBe(true);
+  // The claim never leaves the browser: only public League data, lineups, histories,
+  // the game state and the League's transactions are relayed.
+  expect(relayed.filter((p) => !/^\/api\/fpl\/(game|league\/\d+\/(details|element-status)|draft\/league\/\d+\/transactions|entry\/\d+\/(event\/\d+|history))$/.test(p))).toEqual([]);
 });
 
 test("explains a Manager who isn't in the League", async ({ page }) => {

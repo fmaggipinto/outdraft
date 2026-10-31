@@ -4,7 +4,8 @@ import { opponentsIn } from "../analysis/squad";
 import { pts } from "../format";
 import { gwRange } from "../horizon";
 import type { ElementStatus, ProjectedPlayer, Projections } from "../types";
-import { POS, StatusTag } from "./FreeAgentBrowser";
+import { POS } from "./FreeAgentBrowser";
+import { PlayerTags } from "./PlayerTags";
 
 const HORIZON = 3;
 
@@ -75,9 +76,9 @@ export function CompareTable({ a, b, projections, sub }: {
     <table className="cmp">
       <thead>
         <tr>
-          <th scope="col" className="left">{a.name} <StatusTag p={a} /><span className="muted small block">{sub(a)}</span></th>
+          <th scope="col" className="left">{a.name} <PlayerTags p={a} /><span className="muted small block">{sub(a)}</span></th>
           <th scope="col"><span className="sr-only">Stat</span></th>
-          <th scope="col" className="right">{b.name} <StatusTag p={b} /><span className="muted small block">{sub(b)}</span></th>
+          <th scope="col" className="right">{b.name} <PlayerTags p={b} /><span className="muted small block">{sub(b)}</span></th>
         </tr>
       </thead>
       <tbody>

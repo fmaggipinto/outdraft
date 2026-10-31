@@ -42,7 +42,7 @@ test("switches to Free agent signings once waivers are processed", async ({ page
   await expect(page.getByRole("region", { name: "Waiver phase" })).toContainText("Waivers for GW10 are done");
   const targets = page.getByRole("region", { name: "Free-agent targets" });
   await expect(targets.getByRole("listitem").first()).toContainText("Sign");
-  await expect(targets).not.toContainText("On waivers");
+  await expect(targets).not.toContainText("Claim only");
   // The Waiver order no longer matters, so no ahead/behind flags or Contested tags.
   await expect(targets.locator(".targets")).not.toContainText("ahead of you");
   await expect(targets.locator(".targets")).not.toContainText("Contested");

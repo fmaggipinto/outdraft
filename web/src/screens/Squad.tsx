@@ -3,7 +3,7 @@ import { navigate } from "../App";
 import { squadBreakdown, type SquadCell, type SquadRow } from "../analysis/squad";
 import { useClaim } from "../claim";
 import { BenchPoints } from "../components/BenchPoints";
-import { StatusTag } from "../components/FreeAgentBrowser";
+import { PlayerTags, PlayerTagsProvider, useTagContext } from "../components/PlayerTags";
 import { Screen } from "../components/Screen";
 import { ordinal, pts } from "../format";
 import { gwRange, HorizonToggle, useHorizon } from "../horizon";
@@ -27,6 +27,8 @@ export function Squad({ leagueId, entryId }: { leagueId: number; entryId: number
   // No Manager in the address: the Claimed Manager, else the League leader.
   const shownId = entryId ?? managers.find((m) => m.entryId === claim)?.entryId ?? managers[0]?.entryId;
   const manager = managers.find((m) => m.entryId === shownId);
+  const tagContext = useTagContext(leagueId, state.kind === "ready" ? state.status : undefined,
+    state.kind === "ready" ? state.projections : undefined, managers.find((m) => m.entryId === claim));
 
   useEffect(() => {
     if (manager && state.kind === "ready") document.title = `${manager.teamName} · ${state.league.name} · Outdraft`;
@@ -50,6 +52,7 @@ export function Squad({ leagueId, entryId }: { leagueId: number; entryId: number
 
   return (
     <Screen title={manager.teamName} kicker={`Squad · ${league.name}`} projections={projections} league={tabs}>
+      <PlayerTagsProvider value={tagContext}>
       <div className="manager-picker">
         <label className="sr-only" htmlFor="manager-select">Manager</label>
         <select id="manager-select" value={manager.entryId}
@@ -114,6 +117,7 @@ export function Squad({ leagueId, entryId }: { leagueId: number; entryId: number
           </div>
         </div>
       </section>
+      </PlayerTagsProvider>
     </Screen>
   );
 }
@@ -147,7 +151,7 @@ function TeamSheet({ rows, projections }: { rows: SquadRow[]; projections: Proje
                   <span>
                     <span className="name">{p.name}</span> <span className="muted small">{clubs.get(p.team)}</span>
                     <span className={`tag ${starts ? "xi" : "benched"}`}>{starts ? "XI" : "Bench"}</span>
-                    <StatusTag p={p} />
+                    <PlayerTags p={p} />
                   </span>
                   <span className="muted small form">
                     xG+xA {(p.xg90 + p.xa90).toFixed(2)}/90 · starts {p.starts_recent}/{played}
@@ -224,7 +228,7 @@ function PositionGroup({ pos, rows, span }: { pos: Position; rows: SquadRow[]; s
         <tr key={r.player.id}>
           <th scope="row" className="left player-col">
             <span className="team">{r.player.name}</span>
-            <StatusTag p={r.player} />
+            <PlayerTags p={r.player} />
             {r.player.news && <span className="news">{r.player.news}</span>}
           </th>
           {r.cells.map((c) => <Cell key={c.gameweek} cell={c} />)}
