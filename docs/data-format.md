@@ -78,6 +78,14 @@ Score distributions for the same gameweeks as `projections.json`, used for Head-
   - a double gameweek combines two Fixtures, and a blank gameweek is always 0.
   - Players are treated as independent.
 
+## `deadlines.ics`
+
+An iCalendar feed (RFC 5545, CRLF line endings) of every Waiver deadline and Gameweek deadline from a day ago to the end of the season. Each event lasts 15 minutes and has a 2-hour reminder.
+
+- UIDs are fixed per gameweek and kind (`gw10-waivers@outdraft`, `gw10-deadline@outdraft`), so a moved deadline updates the same event in subscribed calendars.
+- `DTSTAMP` equals the deadline, so the file only changes when deadlines do.
+- Viewers subscribe at `https://outdraft.netlify.app/deadlines.ics`, served by a Netlify Function with a `text/calendar` content type. It replaces push notifications (ADR-0002).
+
 ## `snapshots/gwNN.json`
 
 One file per gameweek, frozen at its Gameweek deadline.

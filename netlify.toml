@@ -9,6 +9,13 @@
 [functions]
   directory = "netlify/functions"
 
+# The deadlines calendar feed (web/netlify/functions/deadlines.mts).
+[[redirects]]
+  from = "/deadlines.ics"
+  to = "/.netlify/functions/deadlines"
+  status = 200
+  force = true
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
