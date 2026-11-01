@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import type { Manifest, Snapshot } from "./analysis/modelCheck";
 import type { EntryHistory } from "./analysis/ranks";
 import type { Trades } from "./analysis/transactionLog";
 import type { EntryPublic } from "./findLeague";
@@ -62,6 +63,10 @@ export const leagueUrls = (id: number) => [`/api/fpl/league/${id}/details`, `/ap
 export const fetchProjections = () => getJson<Projections>(projectionsUrl);
 
 export const fetchResults = () => getJson<Results>(DATA_URL + "results.json");
+
+export const fetchManifest = () => getJson<Manifest>(DATA_URL + "manifest.json");
+
+export const fetchSnapshot = (gw: number) => getJson<Snapshot>(`${DATA_URL}snapshots/gw${String(gw).padStart(2, "0")}.json`);
 
 export const fetchDistributions = () => getJson<Distributions>(DATA_URL + "distributions.json");
 

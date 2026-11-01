@@ -9,6 +9,9 @@ export async function serveRecorded(page: Page, game: Record<string, unknown> = 
   const leagues: Record<string, string> = { "5000": "classic", "130000": "h2h" };
   const json = { contentType: "application/json" };
   await page.route("**/data/projections.json", (r) => r.fulfill({ body: fixture("projections.json"), ...json }));
+  // Like the live manifest today: GW10's Snapshot taken, GW10 not finished.
+  await page.route("**/data/manifest.json", (r) => r.fulfill({ ...json, body: JSON.stringify({
+    first_snapshot_gameweek: 10, snapshots: [10], gaps: [], model: { version: 1, params: { w: 0.5, k: 1 } } }) }));
   await page.route("**/data/results.json", (r) => r.fulfill({ body: fixture("results.json"), ...json }));
   await page.route("**/api/fpl/entry/*/event/*", (r) => {
     const [, entry, gw] = new URL(r.request().url()).pathname.match(/entry\/(\d+)\/event\/(\d+)/)!;

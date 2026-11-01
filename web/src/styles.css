@@ -414,3 +414,15 @@ section[aria-labelledby="table-h"] td.left { white-space: normal; overflow-wrap:
 .log-move { display: flex; flex-wrap: wrap; gap: 2px 14px; margin-top: 2px !important; }
 .log-move .in { color: var(--win); font-weight: 600; }
 .log-move .out { color: var(--loss-text); }
+
+/* Model check */
+.check-chart { width: 100%; max-width: 560px; height: auto; display: block; margin: 6px auto; }
+.check-chart rect { fill: var(--ink); }
+.check-chart .base { stroke: var(--ink); stroke-width: 1.5; }
+.check-chart .mark { stroke: var(--win); stroke-width: 1.5; stroke-dasharray: 5 4; }
+.check-chart .value { fill: var(--ink); font-family: "Anton", Impact, sans-serif; font-size: 12px; }
+.check-chart .axis { fill: var(--muted); font-family: "Barlow Condensed", sans-serif; font-weight: 700; font-size: 12px; }
+.check-table tr.gap th { color: var(--loss-text); }
+.check-table td.beat { color: var(--win); font-weight: 700; }
+.check-table td.short { color: var(--loss-text); font-weight: 700; }
+.check-table tbody th { font-family: inherit; text-transform: none; letter-spacing: 0; color: var(--ink); font-size: 14.5px; font-weight: 600; }
