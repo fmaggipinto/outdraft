@@ -112,7 +112,7 @@ function SquadStrength({ league, horizon, setHorizon, me }: {
                   <span className="pos">{i + 1}</span>
                   <div className="who">
                     <span className="team">{m.teamName} <YouTag show={m.entryId === me} /></span>
-                    <span className="muted small">{m.managerName} · {ordinal(m.table.rank)} in table</span>
+                    <span className="muted small">{ordinal(m.table.rank)} in table</span>
                     <span className="bar" style={{ width: `${width}%` }} />
                   </div>
                   <span className="value">{pts(m.strength[horizon])}</span>
@@ -169,7 +169,6 @@ function LeagueTable({ league, horizon, me, lastFinished }: {
                   <td>{m.table.rank}</td>
                   <td className="left">
                     <Link to={squadPath(league, m, horizon)} className="team">{m.teamName}</Link> <YouTag show={m.entryId === me} />
-                    <span className="muted small block">{m.managerName}</span>
                     <span className="last3 block" title={last3Gws.length ? `GW${last3Gws.join(", GW")}` : undefined}>
                       Last 3: {last3(m.entryId)}
                     </span>

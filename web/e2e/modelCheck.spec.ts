@@ -23,7 +23,7 @@ test("compares Snapshots with actual points, shows gaps, and your Squad", async 
     return r.fulfill({ contentType: "application/json", body: JSON.stringify({ gameweek: gw, deadline: "", model_version: 1, projections }) });
   });
   await page.goto("/league/5000");
-  await page.getByLabel("Are you in this League?").selectOption({ label: "Team C (Manager C)" });
+  await page.getByLabel("Are you in this League?").selectOption({ label: "Team C" });
   await page.goto("/league/5000/more");
 
   const section = page.getByRole("region", { name: "Model check" });

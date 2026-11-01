@@ -4,7 +4,7 @@ import { serveRecorded } from "./recorded";
 test("shows this gameweek's Head-to-head Matchups with Win probability on the League tab", async ({ page }) => {
   await serveRecorded(page);
   await page.goto("/league/130000");
-  await page.getByLabel("Are you in this League?").selectOption({ label: "Team C (Manager C)" });
+  await page.getByLabel("Are you in this League?").selectOption({ label: "Team C" });
 
   const gw10 = page.getByRole("region", { name: "GW10 Matchups" });
   const cards = gw10.getByRole("article");

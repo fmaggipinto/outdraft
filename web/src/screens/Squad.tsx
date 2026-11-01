@@ -67,7 +67,7 @@ export function Squad({ leagueId, entryId }: { leagueId: number; entryId: number
       </div>
       <p className="muted">
         {mine && <span className="tag you" style={{ marginLeft: 0, marginRight: 6 }}>You</span>}
-        {manager.managerName} · {ordinal(manager.table.rank)} in the table · {ordinal(strengthRank)} for Squad strength
+        {ordinal(manager.table.rank)} in the table · {ordinal(strengthRank)} for Squad strength
       </p>
 
       <section aria-labelledby="sheet-h">

@@ -16,7 +16,7 @@ test("shows Waiver targets and the Waiver order for the Claimed Manager", async 
   await expect(page.getByRole("region", { name: "Waiver phase" })).toContainText("Waiver claims for GW10");
   await expect(page.getByText("Claim your Manager to see your Waiver targets.")).toBeVisible();
 
-  await page.getByLabel("Are you in this League?").selectOption({ label: "Team C (Manager C)" });
+  await page.getByLabel("Are you in this League?").selectOption({ label: "Team C" });
   const targets = page.getByRole("region", { name: "Waiver targets" });
   await expect(targets).toContainText("For Team C");
   const items = targets.getByRole("listitem");
@@ -37,7 +37,7 @@ test("switches to Free agent signings once waivers are processed", async ({ page
   await page.clock.setFixedTime(afterWaivers);
   await serveRecorded(page, { waivers_processed: true });
   await page.goto("/league/5000/targets");
-  await page.getByLabel("Are you in this League?").selectOption({ label: "Team C (Manager C)" });
+  await page.getByLabel("Are you in this League?").selectOption({ label: "Team C" });
 
   await expect(page.getByRole("region", { name: "Waiver phase" })).toContainText("Waivers for GW10 are done");
   const targets = page.getByRole("region", { name: "Free-agent targets" });
@@ -59,7 +59,7 @@ test("expands a Waiver target into a comparison with the Player you'd drop", asy
   await page.clock.setFixedTime(beforeWaivers);
   await serveRecorded(page);
   await page.goto("/league/5000/targets");
-  await page.getByLabel("Are you in this League?").selectOption({ label: "Team C (Manager C)" });
+  await page.getByLabel("Are you in this League?").selectOption({ label: "Team C" });
   const items = page.getByRole("region", { name: "Waiver targets" }).locator(".targets > li");
   const first = items.first();
   const toggle = first.getByRole("button", { name: /^Compare with / });
