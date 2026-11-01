@@ -97,7 +97,7 @@ test("claims a Manager per League, remembers it, and can clear it", async ({ pag
   await page.goto("/league/5000");
   await expect(page.getByRole("region", { name: "Squad strength" })).toBeVisible();
   await expect(page.locator(".me")).toHaveCount(0);
-  await page.getByLabel("Are you in this League?").selectOption({ label: "Team C (Manager C)" });
+  await page.getByLabel("Are you in this League?").selectOption({ label: "Team C" });
 
   const strengthMe = page.getByRole("region", { name: "Squad strength" }).locator("li.me");
   await expect(strengthMe).toContainText("Team C");
@@ -182,7 +182,7 @@ test("shows Season points by position with top scorers, a Points / % share toggl
 
 test("charts every Manager's rank over time and highlights one from the legend", async ({ page }) => {
   await page.goto("/league/5000");
-  await page.getByLabel("Are you in this League?").selectOption({ label: "Team C (Manager C)" });
+  await page.getByLabel("Are you in this League?").selectOption({ label: "Team C" });
   const section = page.getByRole("region", { name: "Rank over time" });
   await expect(section.getByRole("img")).toBeVisible();
   await expect(section.locator("polyline")).toHaveCount(8);
@@ -217,7 +217,7 @@ test("shows points per gameweek against the League average and best", async ({ p
   await expect(section.locator("rect.bar")).toHaveCount(0);
   await expect(section).toContainText("Claim your Manager to see your own points as bars.");
 
-  await page.getByLabel("Are you in this League?").selectOption({ label: "Team C (Manager C)" });
+  await page.getByLabel("Are you in this League?").selectOption({ label: "Team C" });
   await expect(section.locator("rect.bar")).toHaveCount(8);
   await expect(section.locator("polyline.avg")).toHaveCount(1);
   await expect(section.locator(".ppg-key")).toContainText("Team C");

@@ -33,7 +33,7 @@ export function ClaimCard({ league, me, setClaim }: {
       >
         <option value="">Choose your team…</option>
         {[...league.managers].sort((a, b) => a.teamName.localeCompare(b.teamName)).map((m) => (
-          <option key={m.entryId} value={m.entryId}>{m.teamName} ({m.managerName})</option>
+          <option key={m.entryId} value={m.entryId}>{m.teamName}</option>
         ))}
       </select>
       <p className="muted small">

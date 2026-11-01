@@ -95,10 +95,22 @@ function WaiverView({ league, projections, manager, setClaim, game, transactions
   );
   // Compare your top Waiver target with the Player he'd replace, until you pick others.
   const compareIds: [number | null, number | null] = compare ?? (targets[0] ? [targets[0].in.id, targets[0].out.id] : [null, null]);
+  // Compare takes two taps: the first Player waits in a tray while you find the second.
+  const [pending, setPending] = useState<number | null>(null);
+  const showCompare = () => compareRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   const compareWith = (id: number) => {
-    setCompare([id, targets.find((t) => t.in.id === id)?.out.id ?? compareIds[1] ?? compareIds[0]]);
-    compareRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (pending == null) setPending(id);
+    else if (pending === id) setPending(null);
+    else { setCompare([pending, id]); setPending(null); showCompare(); }
   };
+  const searchSecond = () => {
+    if (pending == null) return;
+    setCompare([pending, null]);
+    setPending(null);
+    showCompare();
+    document.getElementById("cmp-second")?.focus({ preventScroll: true });
+  };
+  const pendingPlayer = pending != null ? projections.players.find((p) => p.id === pending) : undefined;
   const event = projections.events.find((e) => e.gameweek === nextGw) ?? projections.events[0];
   const short = new Map(projections.teams.map((t) => [t.id, t.short_name]));
   const gws = gwRange(projections.gameweeks.slice(0, TARGET_HORIZON));
@@ -151,8 +163,18 @@ function WaiverView({ league, projections, manager, setClaim, game, transactions
         </section>
       )}
       <WaiverOrder league={league} me={manager?.entryId ?? null} />
-      <FreeAgentBrowser status={status} projections={projections} onCompare={compareWith} />
-      <PlayerCompare ref={compareRef} league={league} status={status} projections={projections} ids={compareIds} setIds={setCompare} />
+      <FreeAgentBrowser status={status} projections={projections} onCompare={compareWith} pendingId={pending} />
+      <PlayerCompare ref={compareRef} league={league} status={status} projections={projections} ids={compareIds} setIds={setCompare}
+        squad={manager?.squad} />
+      {pendingPlayer && (
+        <div className="cmp-tray" role="region" aria-label="Comparing">
+          <span>Comparing <b>{pendingPlayer.name}</b>. Tap Compare on a second Player.</span>
+          <span className="cmp-tray-actions">
+            <button type="button" className="ghost small-btn" onClick={searchSecond}>Search instead</button>
+            <button type="button" className="link muted" onClick={() => setPending(null)}>Cancel</button>
+          </span>
+        </div>
+      )}
     </PlayerTagsProvider>
   );
 }
@@ -253,7 +275,6 @@ function WaiverOrder({ league, me }: { league: LeagueAnalysis; me: number | null
         {order.map((m) => (
           <li key={m.entryId} className={m.entryId === me ? "me" : undefined}>
             <span className="team">{m.teamName}</span> <YouTag show={m.entryId === me} />
-            <span className="muted small"> {m.managerName}</span>
           </li>
         ))}
       </ol>

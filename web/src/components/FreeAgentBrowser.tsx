@@ -8,10 +8,13 @@ import { PlayerTags } from "./PlayerTags";
 export const POS: Record<Position, string> = { 1: "GKP", 2: "DEF", 3: "MID", 4: "FWD" };
 const PAGE = 25;
 
-export function FreeAgentBrowser({ status, projections, onCompare }: {
+export function FreeAgentBrowser({ status, projections, onCompare, pendingId = null }: {
   status: ElementStatus;
   projections: Projections;
+  /** Tap once to pick the first Player to compare, again on another to compare them. */
   onCompare: (id: number) => void;
+  /** The Player waiting for a second to compare with. */
+  pendingId?: number | null;
 }) {
   const [horizon, setHorizon] = useHorizon();
   const [position, setPosition] = useState<Position | null>(null);
@@ -66,8 +69,9 @@ export function FreeAgentBrowser({ status, projections, onCompare }: {
                 {r.player.news && <span className="news">{r.player.news}</span>}
               </div>
               <span className="value">{pts(r.projection)}</span>
-              <button type="button" className="ghost small-btn" onClick={() => onCompare(r.player.id)}
-                aria-label={`Compare ${r.player.name}`}>Compare</button>
+              <button type="button" className={`small-btn${r.player.id === pendingId ? "" : " ghost"}`}
+                onClick={() => onCompare(r.player.id)} aria-pressed={r.player.id === pendingId}
+                aria-label={`Compare ${r.player.name}`}>{r.player.id === pendingId ? "Picked" : "Compare"}</button>
             </li>
           ))}
         </ol>

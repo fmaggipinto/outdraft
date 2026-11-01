@@ -9,7 +9,7 @@ test("suggests Win-win trades for the Claimed Manager and filters by rival", asy
   await expect(page).toHaveURL(/\/league\/5000\/trades/);
   await expect(page.getByText("Claim your Manager to see Win-win trades.")).toBeVisible();
 
-  await page.getByLabel("Are you in this League?").selectOption({ label: "Team C (Manager C)" });
+  await page.getByLabel("Are you in this League?").selectOption({ label: "Team C" });
   const card = page.getByRole("region", { name: "Win-win trades" });
   const items = card.getByRole("listitem");
   await expect(items.first()).toContainText("You give");
@@ -29,6 +29,6 @@ test("suggests Win-win trades for the Claimed Manager and filters by rival", asy
 
 test("says when a Manager has no Win-win trades", async ({ page }) => {
   await page.goto("/league/5000/trades");
-  await page.getByLabel("Are you in this League?").selectOption({ label: "Team D (Manager D)" });
+  await page.getByLabel("Are you in this League?").selectOption({ label: "Team D" });
   await expect(page.getByRole("region", { name: "Win-win trades" })).toContainText("No Win-win trades in this League right now");
 });

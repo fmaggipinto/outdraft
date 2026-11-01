@@ -1,4 +1,5 @@
-import { forwardRef } from "react";
+import { forwardRef, useState } from "react";
+import { matchesQuery } from "../analysis/freeAgents";
 import type { LeagueAnalysis } from "../analysis/league";
 import { opponentsIn } from "../analysis/squad";
 import { pts } from "../format";
@@ -16,42 +17,82 @@ export const PlayerCompare = forwardRef<HTMLElement, {
   projections: Projections;
   ids: [number | null, number | null];
   setIds: (ids: [number | null, number | null]) => void;
-}>(function PlayerCompare({ league, status, projections, ids, setIds }, ref) {
+  /** The Claimed Manager's Squad, offered before typing. */
+  squad?: number[];
+}>(function PlayerCompare({ league, status, projections, ids, setIds, squad = [] }, ref) {
   const players = new Map(projections.players.map((p) => [p.id, p]));
   const teamOf = new Map(league.managers.map((m) => [m.entryId, m.teamName]));
   const ownerOf = new Map(status.element_status.map((e) => [e.element, e.owner]));
   const short = new Map(projections.teams.map((t) => [t.id, t.short_name]));
   const owner = (id: number) => { const o = ownerOf.get(id); return o != null ? teamOf.get(o) ?? "Another Squad" : "Free agent"; };
-
-  const sorted = [...projections.players].sort((a, b) => a.position - b.position || a.name.localeCompare(b.name));
-  const picker = (side: 0 | 1) => (
-    <select aria-label={side === 0 ? "First Player" : "Second Player"} value={ids[side] ?? ""}
-      onChange={(e) => { const next = [...ids] as [number | null, number | null]; next[side] = e.target.value ? Number(e.target.value) : null; setIds(next); }}>
-      <option value="">Choose a Player…</option>
-      {([1, 2, 3, 4] as const).map((pos) => (
-        <optgroup key={pos} label={POS[pos]}>
-          {sorted.filter((p) => p.position === pos).map((p) => (
-            <option key={p.id} value={p.id}>{p.name} ({short.get(p.team)}, {owner(p.id)})</option>
-          ))}
-        </optgroup>
-      ))}
-    </select>
-  );
+  const describe = (p: ProjectedPlayer) => `${POS[p.position]} · ${short.get(p.team)} · ${owner(p.id)}`;
+  const mine = squad.map((id) => players.get(id)).filter((p): p is ProjectedPlayer => p != null)
+    .sort((a, b) => a.position - b.position || a.name.localeCompare(b.name));
+  const pick = (side: 0 | 1) => (id: number) => { const next = [...ids] as [number | null, number | null]; next[side] = id; setIds(next); };
 
   const [a, b] = ids.map((id) => (id != null ? players.get(id) : undefined)) as [ProjectedPlayer | undefined, ProjectedPlayer | undefined];
 
   return (
     <section className="card" aria-labelledby="cmp-h" ref={ref}>
       <h2 id="cmp-h">Compare two Players</h2>
-      <div className="cmp-pickers">{picker(0)}{picker(1)}</div>
+      <div className="cmp-pickers">
+        <PlayerPicker id="cmp-first" label="First Player" value={a} players={projections.players} squad={mine} describe={describe} onPick={pick(0)} />
+        <PlayerPicker id="cmp-second" label="Second Player" value={b} players={projections.players} squad={mine} describe={describe} onPick={pick(1)} />
+      </div>
       {a && b ? (
         <CompareTable a={a} b={b} projections={projections} sub={(p) => owner(p.id)} />
       ) : (
-        <p className="muted">Choose two Players, owned or not, to compare them.</p>
+        <p className="muted">Search for two Players, owned or not, to compare them.</p>
       )}
     </section>
   );
 });
+
+const MATCHES = 8;
+
+/** A search box that picks one Player: type part of a name, then tap a match.
+ * Before typing it offers your Squad. */
+function PlayerPicker({ id, label, value, players, squad, describe, onPick }: {
+  id: string;
+  label: string;
+  value: ProjectedPlayer | undefined;
+  players: ProjectedPlayer[];
+  squad: ProjectedPlayer[];
+  describe: (p: ProjectedPlayer) => string;
+  onPick: (id: number) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const options = query.trim()
+    ? players.filter((p) => matchesQuery(p, query)).sort((x, y) => y.total_points - x.total_points).slice(0, MATCHES)
+    : squad;
+  const choose = (p: ProjectedPlayer) => { onPick(p.id); setOpen(false); setQuery(""); };
+  return (
+    <div className="cmp-picker">
+      <input id={id} type="search" aria-label={label} placeholder="Search a Player…" autoComplete="off"
+        aria-expanded={open} aria-controls={`${id}-list`}
+        value={open ? query : value?.name ?? ""}
+        onFocus={() => { setOpen(true); setQuery(""); }}
+        onBlur={() => setOpen(false)}
+        onChange={(e) => setQuery(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && options[0]) { e.preventDefault(); choose(options[0]); (e.target as HTMLInputElement).blur(); }
+          if (e.key === "Escape") (e.target as HTMLInputElement).blur();
+        }} />
+      {open && (
+        <div className="cmp-options" id={`${id}-list`}>
+          {!query.trim() && squad.length > 0 && <span className="muted small">Your Squad</span>}
+          {query.trim() && !options.length && <span className="muted small">No Players match.</span>}
+          {options.map((p) => (
+            <button key={p.id} type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => choose(p)}>
+              <span>{p.name}</span> <span className="muted small">{describe(p)}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 /** Two Players side by side: Projection, form, minutes, starts, points, last 6
  * scores, next Fixtures and news. The better value in each row is marked. */

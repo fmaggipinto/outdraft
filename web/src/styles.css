@@ -259,7 +259,28 @@ tr.me td:first-child { box-shadow: inset 4px 0 0 var(--accent); }
 .fa-list .team { font-weight: 700; }
 .fa-list .value { font-family: "Anton", Impact, sans-serif; font-size: 18px; }
 .cmp-pickers { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; margin: 10px 0; }
-.cmp-pickers select { width: 100%; min-width: 0; }
+.cmp-picker { position: relative; min-width: 0; }
+.cmp-picker input { width: 100%; min-width: 0; }
+.cmp-options {
+  position: absolute; left: 0; right: 0; top: 100%; z-index: 5; max-height: 320px; overflow-y: auto;
+  background: var(--card); border: 1.5px solid var(--ink); border-top: 0; padding: 4px 0;
+}
+.cmp-options > span { display: block; padding: 4px 10px; }
+.cmp-options button {
+  display: block; width: 100%; text-align: left; background: transparent; color: var(--ink); border: 0;
+  padding: 8px 10px; font-weight: 600;
+}
+.cmp-options button:hover, .cmp-options button:focus-visible { background: var(--highlight); }
+.cmp-options button .muted { display: block; font-weight: 400; }
+.cmp-tray {
+  position: fixed; z-index: 9; left: 50%; transform: translateX(-50%);
+  bottom: calc(66px + env(safe-area-inset-bottom)); width: calc(100% - 32px); max-width: 728px;
+  display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; justify-content: space-between;
+  background: var(--band); color: var(--band-ink); padding: 10px 14px; border-left: 6px solid var(--accent);
+}
+.cmp-tray .ghost { color: var(--band-ink); border-color: var(--band-ink); }
+.cmp-tray .link.muted { color: var(--band-ink); opacity: 0.85; }
+.cmp-tray-actions { display: flex; gap: 12px; align-items: center; }
 table.cmp { table-layout: fixed; }
 table.cmp th, table.cmp td { white-space: normal; vertical-align: top; }
 table.cmp thead th { color: var(--ink); font-size: 14px; }

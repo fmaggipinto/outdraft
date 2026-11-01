@@ -4,7 +4,7 @@ import { serveRecorded } from "./recorded";
 test.beforeEach(async ({ page }) => {
   await serveRecorded(page);
   await page.goto("/league/5000");
-  await page.getByLabel("Are you in this League?").selectOption({ label: "Team C (Manager C)" });
+  await page.getByLabel("Are you in this League?").selectOption({ label: "Team C" });
 });
 
 /** Every row in a listing renders the shared tag component (even if empty). */
